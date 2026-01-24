@@ -16,11 +16,11 @@
     <h1>Este es <strong> El menu de Ernesto®</strong></h1>
     <div class="nav-buttons">
       <a href="{% url 'home' %}?group_name=General" class="nav-btn">General</a>
-      <a href="{% url 'home' %}?group_name=Ofertas" class="nav-btn">Ofertas</a>
-      <a href="{% url 'home' %}?group_name=Desarrollos" class="nav-btn">Desarrollos</a>
-      <a href="{% url 'home' %}?group_name=Proyectos" class="nav-btn">Proyectos</a>
-      <a href="{% url 'home' %}?group_name=Of.Obsoletas" class="nav-btn">Ofertas Obsoletas</a>
-      <a href="{% url 'home' %}?group_name=Proy.Antiguos" class="nav-btn">Proyectos Antiguos</a>
+      {% for bloque in bloques %}
+        {% if bloque.name != "General" %}
+          <a href="{% url 'home' %}?group_name={{ bloque.name }}" class="nav-btn">{{ bloque.name }}</a>
+        {% endif %}
+      {% endfor %}
     </div>
   </header>
   <main>
@@ -50,29 +50,34 @@
             <h2 class="titel">Editor de lista de Proyectos</h2>
           </div>
           <ul class="enlaces_generales">
-            <li> <a href="{% url 'abrir' filename='Ofertas.csv' %}" class="btn">Edit Ofertas</a></li>
-            <li> <a href="{% url 'abrir' filename='Desarrollos.csv' %}" class="btn">Edit Desarrollos</a></li>
-            <li> <a href="{% url 'abrir' filename='OfObsoletas.csv' %}" class="btn">Edit Ofert. Obsoletas</a></li>
-            <li> <a href="{% url 'abrir' filename='Proyectos.csv' %}" class="btn">Edit Proyectos</a></li>
-            <li> <a href="{% url 'abrir' filename='PrAntiguos.csv' %}" class="btn">Edit Proy. Antiguos</a></li>
+            {% for bloque in bloques %}
+              {% if bloque.name != "General" %}
+                <li> <a href="{% url 'abrir' filename=bloque.name|add:'.csv' %}" class="btn">Edit {{ bloque.name }}</a></li>
+              {% endif %}
+            {% endfor %}
           </ul>
         </div>
         <div class="contenedor-section">
           <div class="group-title">
-            <h2 class="titel">Editor de JSONs</h2>
+            <h2 class="titel">Editor de Configuración</h2>
           </div>
           <ul class="enlaces_generales">
-            <li> <a href="{% url 'abrir' filename='Ofertas.json' %}" class="btn">Edit Ofertas</a></li>
-            <li> <a href="{% url 'abrir' filename='Desarrollos.json' %}" class="btn">Edit Desarrollos</a></li>
-            <li> <a href="{% url 'abrir' filename='OfObsoletas.json' %}" class="btn">Edit Ofert. Obsoletas</a></li>
-            <li> <a href="{% url 'abrir' filename='Proyectos.json' %}" class="btn">Edit Proyectos</a></li>
-            <li> <a href="{% url 'abrir' filename='PrAntiguos.json' %}" class="btn">Edit Proy. Antiguos</a></li>
-            <li> <a href="{% url 'abrir' filename='General.json' %}" class="btn">Edit General</a></li>
+            <li> <a href="{% url 'abrir' filename='General.json' %}" class="btn">📄 Edit General</a></li>
+          </ul>
+        </div>
+        <div class="contenedor-section">
+          <div class="group-title">
+            <h2 class="titel">Gestión de Bloques Dinámicos</h2>
+          </div>
+          <ul class="enlaces_generales">
+            <li> <a href="{% url 'bloques_editor' %}" class="btn">🔧 Editor de Bloques</a></li>
+            <li> <a href="{% url 'json_visualizer' %}" class="btn">📊 Visualizador de Bloques</a></li>
+
           </ul>
         </div>
       </div>
       {% endif %}
-    {% if group_name.name == "Ofertas" or group_name.name == "Desarrollos" or group_name.name == "Of.Obsoletas" %}
+    {% if group_name.name != "General" and group_name.folder_project and not group_name.folder_offer %}
     <div class="grid-container">
       {% for key, item in group_name.links.items %}
       <div class="grid-item">
@@ -93,7 +98,7 @@
       {% endfor %}
     </div>
     {% endif %}
-    {% if group_name.name == "Proyectos" or group_name.name == "Proy.Antiguos" %}
+    {% if group_name.name != "General" and group_name.folder_offer and group_name.folder_project %}
     <div class="grid-container">
       {% for key, item in group_name.links.items %}
       <div class="grid-item">

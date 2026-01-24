@@ -23,6 +23,10 @@
     <form method="POST" action="{% url 'guarda' %}" onsubmit="return saveJSON()">
       {% csrf_token %}
       <input type="hidden" name="filename" value="{{ filename }}">
+      {% if use_session %}
+      <input type="hidden" name="use_session" value="true">
+      <input type="hidden" name="data_id" value="{{ data_id }}">
+      {% endif %}
       <input type="hidden" id="jsonOutput" name="datos_modificados" value="">
       <textarea id="initialJsonData" style="display: none;">{{ datos|safe }}</textarea>
       

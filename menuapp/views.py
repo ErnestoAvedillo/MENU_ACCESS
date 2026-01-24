@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.conf import settings
+from django.contrib import messages
 import subprocess
 import json
 import csv
 import os
 import re
+import base64
+import hashlib
 
 
 URL_RE = re.compile(r'^(https?://)', re.IGNORECASE)
@@ -44,24 +47,52 @@ def save(filename, data):
         file.write(parsed_data)
 
 
+def get_bloques():
+    """Carga la configuración de bloques desde bloques.json"""
+    try:
+        bloques_config = open_json("bloques.json")
+        return bloques_config.get("bloques", [])
+    except:
+        return []
+
+
 def get_links():
+    """Carga los enlaces dinámicamente basado en la configuración de bloques"""
     General = open_json("General.json")
-    Oferta = open_json("Ofertas.json")
-    lista_ofertas = open_csv("Ofertas.csv")
-    Oferta["links"] = lista_ofertas
-    Proyectos = open_json("Proyectos.json")
-    lista_proyectos = open_csv("Proyectos.csv")
-    Proyectos["links"] = lista_proyectos
-    Desarrollos = open_json("Desarrollos.json")
-    lista_desarrollos = open_csv("Desarrollos.csv")
-    Desarrollos["links"] = lista_desarrollos
-    OfObsoletas = open_json("OfObsoletas.json")
-    lista_OfObsoletas = open_csv("OfObsoletas.csv")
-    OfObsoletas["links"] = lista_OfObsoletas
-    PrAntiguos = open_json("PrAntiguos.json")
-    lista_PrAntiguos = open_csv("PrAntiguos.csv")
-    PrAntiguos["links"] = lista_PrAntiguos
-    return General, Oferta, Proyectos, Desarrollos, OfObsoletas, PrAntiguos
+    bloques = get_bloques()
+    grupos = {'General': General}
+    
+    # Cargar grupos dinámicamente desde bloques.json
+    for bloque in bloques:
+        name = bloque["name"]
+        if name == "General":
+            continue
+            
+        try:
+            # Crear estructura del grupo desde la configuración del bloque
+            grupo_json = {
+                "name": name,
+                "links": {}  # Los links se cargarán desde CSV si existe
+            }
+            
+            # Cargar el CSV correspondiente si existe
+            csv_filename = bloque.get("csv_file", f"static/data/{name}.csv")
+            csv_basename = os.path.basename(csv_filename)
+            if os.path.exists(os.path.join(settings.BASE_DIR, "static", "data", csv_basename)):
+                lista_items = open_csv(csv_basename)
+                grupo_json["links"] = lista_items
+            
+            # Agregar las carpetas de configuración desde bloques.json
+            for key, value in bloque.items():
+                if key != "name" and key != "csv_file":
+                    grupo_json[key] = value
+                    
+            grupos[name] = grupo_json
+        except Exception as e:
+            print(f"Error cargando grupo {name}: {e}")
+            continue
+    
+    return grupos
 
 
 def is_url(s: str) -> bool:
@@ -70,19 +101,16 @@ def is_url(s: str) -> bool:
 
 def home(request):
     group_name_param = request.GET.get('group_name', 'General')
-    General, Ofertas, Proyectos, Desarrollos, OfObsoletas, PrAntiguos = get_links()
+    grupos = get_links()
+    bloques = get_bloques()
 
-    grupos = {
-        'General': General,
-        'Ofertas': Ofertas,
-        'Proyectos': Proyectos,
-        'Desarrollos': Desarrollos,
-        'Of.Obsoletas': OfObsoletas,
-        'Proy.Antiguos': PrAntiguos,
-    }
-
-    group_name = grupos.get(group_name_param, General)
-    return render(request, 'index.html', {'group_name': group_name})
+    group_name = grupos.get(group_name_param, grupos.get('General', {}))
+    
+    return render(request, 'index.html', {
+        'group_name': group_name, 
+        'grupos': grupos,
+        'bloques': bloques
+    })
 
 
 def editor(request, datos, filename):
@@ -100,6 +128,10 @@ def editor(request, datos, filename):
 
 
 def abrir(request, filename):
+    # Para bloques.json, usar el editor especializado
+    if filename == "bloques.json":
+        return redirect(reverse('bloques_editor'))
+    
     name, extension = os.path.splitext(filename)
     if extension == ".csv":
         datos = open_csv(filename, asJSON=False)
@@ -108,7 +140,15 @@ def abrir(request, filename):
     else:
         # Para extensiones no soportadas, redirigir al home
         return redirect(reverse('home') + '?group_name=General')
-    return redirect(reverse('editor', kwargs={'datos': datos, 'filename': filename}))
+    
+    # Para archivos grandes, usar sessions
+    if len(datos) > 1000:
+        # Crear un identificador único para los datos
+        data_id = hashlib.md5(f"{filename}_{datos[:100]}".encode()).hexdigest()
+        request.session[f"editor_data_{data_id}"] = datos
+        return redirect(reverse('editor_with_session', kwargs={'data_id': data_id, 'filename': filename}))
+    else:
+        return redirect(reverse('editor', kwargs={'datos': datos, 'filename': filename}))
 
 
 def abrir_carpeta(request, folder, group_name):
@@ -119,14 +159,104 @@ def abrir_carpeta(request, folder, group_name):
     return redirect(reverse('home') + f'?group_name={group_name}')
 
 
+def editor_with_session(request, data_id, filename):
+    """Editor que usa session para archivos grandes"""
+    # Para bloques.json, redirigir al editor especializado
+    if filename == "bloques.json":
+        return redirect(reverse('bloques_editor'))
+        
+    datos = request.session.get(f"editor_data_{data_id}")
+    if not datos:
+        messages.error(request, "Los datos del archivo han expirado. Por favor, intenta de nuevo.")
+        return redirect(reverse('home') + '?group_name=General')
+    
+    parsed_data = re.sub(r'%2F', '/', datos)
+    name, extension = os.path.splitext(filename)
+    
+    # Usar editor de tabla para archivos CSV
+    if extension == ".csv":
+        return render(request, 'table_editor.html', {
+            'datos': parsed_data, 
+            'filename': filename,
+            'use_session': True,
+            'data_id': data_id
+        })
+    # Usar editor de JSON para archivos JSON
+    elif extension == ".json":
+        return render(request, 'json_editor.html', {
+            'datos': parsed_data, 
+            'filename': filename,
+            'use_session': True,
+            'data_id': data_id
+        })
+    else:
+        return render(request, 'editor.html', {
+            'datos': parsed_data, 
+            'filename': filename,
+            'use_session': True,
+            'data_id': data_id
+        })
+
+
 def guarda(request):
     if request.method == 'POST':
         datos = request.POST['datos_modificados']
         filename = request.POST['filename']
-        _, extension = os.path.splitext(request.POST['filename'])
+        use_session = request.POST.get('use_session', False)
+        data_id = request.POST.get('data_id', '')
+        
+        # Limpiar la session si se usó
+        if use_session and data_id:
+            session_key = f"editor_data_{data_id}"
+            if session_key in request.session:
+                del request.session[session_key]
+        
+        _, extension = os.path.splitext(filename)
         if extension == ".csv" or extension == ".json":
             save(filename=filename, data=datos)
+            messages.success(request, f"Archivo {filename} guardado correctamente.")
         else:
+            messages.error(request, "Tipo de archivo no soportado.")
             return redirect(reverse('home') + '?group_name=General')
         return redirect(reverse('home') + '?group_name=General')
     return redirect(reverse('home') + '?group_name=General')
+
+
+def bloques_editor(request):
+    """Vista para el editor de bloques dinámicos"""
+    if request.method == 'POST':
+        bloques_json = request.POST.get('bloques_json', '{}')
+        try:
+            # Guardar los bloques actualizados
+            save(filename="bloques.json", data=bloques_json)
+            return redirect(reverse('home') + '?group_name=General')
+        except Exception as e:
+            print(f"Error guardando bloques: {e}")
+    
+    # Cargar bloques existentes
+    try:
+        bloques_config = open_json("bloques.json")
+        bloques = bloques_config.get("bloques", [])
+    except:
+        bloques = []
+    
+    return render(request, 'bloques_editor.html', {
+        'bloques_json': json.dumps(bloques),
+        'bloques': bloques
+    })
+
+
+def json_visualizer(request):
+    """Vista para visualizar los bloques JSON de forma amigable"""
+    try:
+        bloques_config = open_json("bloques.json")
+        bloques = bloques_config.get("bloques", [])
+        bloques_dinamicos = [b for b in bloques if b.get("name") != "General"]
+    except:
+        bloques = []
+        bloques_dinamicos = []
+    
+    return render(request, 'json_visualizer.html', {
+        'bloques': bloques,
+        'bloques_dinamicos': bloques_dinamicos
+    })

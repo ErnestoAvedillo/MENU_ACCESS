@@ -1,0 +1,239 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Bloques JSON - El Menú de Ernesto®</title>
+    <link rel="stylesheet" href="{% static 'css/estiloss.css' %}">
+    <style>
+        .json-visualizer {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .bloque-card {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .bloque-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 15px;
+            margin: -20px -20px 15px -20px;
+            border-radius: 6px 6px 0 0;
+        }
+        
+        .bloque-title {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .config-item {
+            background: white;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .config-label {
+            font-weight: bold;
+            color: #495057;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .config-value {
+            font-family: 'Courier New', monospace;
+            background: #f1f3f4;
+            padding: 5px 8px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        
+        .actions-bar {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        
+        .btn-action {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 0 10px;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        
+        .btn-action:hover {
+            background: #0056b3;
+            color: white;
+        }
+        
+        .btn-edit {
+            background: #28a745;
+        }
+        
+        .btn-edit:hover {
+            background: #1e7e34;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .empty-icon {
+            font-size: 4em;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><strong>📊 Visualizador de Bloques JSON</strong></h1>
+        <div class="nav-buttons">
+            <a href="{% url 'home' %}?group_name=General" class="nav-btn">← Volver al Menú</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="json-visualizer">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">{{ bloques|length }}</div>
+                    <div class="stat-label">Bloques Totales</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ bloques_dinamicos|length }}</div>
+                    <div class="stat-label">Bloques Dinámicos</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">1</div>
+                    <div class="stat-label">Bloque General</div>
+                </div>
+            </div>
+            
+            <div class="actions-bar">
+                <a href="{% url 'bloques_editor' %}" class="btn-action btn-edit">🔧 Editor de Bloques</a>
+                <a href="{% url 'abrir' filename='bloques.json' %}" class="btn-action">📄 Editar JSON Raw</a>
+                <a href="{% url 'json_visualizer' %}" class="btn-action">🔄 Actualizar Vista</a>
+            </div>
+
+            {% if bloques %}
+                {% for bloque in bloques %}
+                <div class="bloque-card">
+                    <div class="bloque-header">
+                        <h2 class="bloque-title">
+                            {% if bloque.name == "General" %}
+                                🏠 {{ bloque.name }} (Estático)
+                            {% else %}
+                                🔧 {{ bloque.name }} (Dinámico)
+                            {% endif %}
+                        </h2>
+                    </div>
+                    
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <div class="config-label">Nombre</div>
+                            <div class="config-value">{{ bloque.name }}</div>
+                        </div>
+                        
+                        {% if bloque.folder_project %}
+                        <div class="config-item">
+                            <div class="config-label">Carpeta Proyectos</div>
+                            <div class="config-value">{{ bloque.folder_project }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if bloque.folder_cad %}
+                        <div class="config-item">
+                            <div class="config-label">Carpeta CAD</div>
+                            <div class="config-value">{{ bloque.folder_cad }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if bloque.folder_offer %}
+                        <div class="config-item">
+                            <div class="config-label">Carpeta Ofertas</div>
+                            <div class="config-value">{{ bloque.folder_offer }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if bloque.folder_cad_offer %}
+                        <div class="config-item">
+                            <div class="config-label">Carpeta CAD Ofertas</div>
+                            <div class="config-value">{{ bloque.folder_cad_offer }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if bloque.csv_file %}
+                        <div class="config-item">
+                            <div class="config-label">Archivo CSV</div>
+                            <div class="config-value">{{ bloque.csv_file }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <h3>No hay bloques configurados</h3>
+                    <p>Utiliza el editor de bloques para crear tu primer bloque dinámico.</p>
+                    <a href="{% url 'bloques_editor' %}" class="btn-action btn-edit">Crear Primer Bloque</a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

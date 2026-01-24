@@ -1,0 +1,183 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Bloques - El Menú de Ernesto®</title>
+    <link rel="stylesheet" href="{% static 'css/estiloss.css' %}">
+    <link rel="stylesheet" href="{% static 'css/json-editor.css' %}">
+    <style>
+        .bloque-item {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .bloque-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .btn-delete {
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-add {
+            background-color: #44aa44;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .acciones {
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><strong>Editor de Bloques Dinámicos</strong></h1>
+        <div class="nav-buttons">
+            <a href="{% url 'home' %}?group_name=General" class="nav-btn">← Volver al Menú</a>
+        </div>
+    </header>
+    
+    <main>
+        <div class="contenedor">
+            <div class="acciones">
+                <button type="button" class="btn-add" onclick="agregarBloque()">+ Agregar Nuevo Bloque</button>
+            </div>
+            
+            <form method="post" id="bloques-form">
+                {% csrf_token %}
+                <div id="bloques-container">
+                    <!-- Los bloques se cargarán aquí via JavaScript -->
+                </div>
+                
+                <div class="acciones">
+                    <button type="submit" class="btn">Guardar Cambios</button>
+                    <button type="button" class="btn" onclick="window.location.href='{% url 'home' %}?group_name=General'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        let bloques = {{ bloques_json|safe }};
+        let bloqueCounter = 0;
+
+        function renderBloques() {
+            const container = document.getElementById('bloques-container');
+            container.innerHTML = '';
+            
+            bloques.forEach((bloque, index) => {
+                const bloqueDiv = document.createElement('div');
+                bloqueDiv.className = 'bloque-item';
+                bloqueDiv.innerHTML = `
+                    <div class="bloque-header">
+                        <h3>Bloque: ${bloque.name}</h3>
+                        ${bloque.name !== 'General' ? `<button type="button" class="btn-delete" onclick="eliminarBloque(${index})">Eliminar</button>` : ''}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Nombre del Bloque:</label>
+                        <input type="text" name="bloque_${index}_name" value="${bloque.name}" ${bloque.name === 'General' ? 'readonly' : ''} onchange="actualizarBloque(${index}, 'name', this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Carpeta de Proyectos:</label>
+                        <input type="text" name="bloque_${index}_folder_project" value="${bloque.folder_project || ''}" onchange="actualizarBloque(${index}, 'folder_project', this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Carpeta CAD:</label>
+                        <input type="text" name="bloque_${index}_folder_cad" value="${bloque.folder_cad || ''}" onchange="actualizarBloque(${index}, 'folder_cad', this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Carpeta de Ofertas:</label>
+                        <input type="text" name="bloque_${index}_folder_offer" value="${bloque.folder_offer || ''}" onchange="actualizarBloque(${index}, 'folder_offer', this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Carpeta CAD Ofertas:</label>
+                        <input type="text" name="bloque_${index}_folder_cad_offer" value="${bloque.folder_cad_offer || ''}" onchange="actualizarBloque(${index}, 'folder_cad_offer', this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Archivo CSV:</label>
+                        <input type="text" name="bloque_${index}_csv_file" value="${bloque.csv_file || ''}" onchange="actualizarBloque(${index}, 'csv_file', this.value)">
+                    </div>
+                `;
+                container.appendChild(bloqueDiv);
+            });
+            
+            // Agregar input hidden con JSON completo
+            const hiddenInput = document.getElementById('bloques_json') || document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'bloques_json';
+            hiddenInput.id = 'bloques_json';
+            hiddenInput.value = JSON.stringify({bloques: bloques});
+            if (!document.getElementById('bloques_json')) {
+                document.getElementById('bloques-form').appendChild(hiddenInput);
+            }
+        }
+
+        function actualizarBloque(index, field, value) {
+            bloques[index][field] = value;
+            document.getElementById('bloques_json').value = JSON.stringify({bloques: bloques});
+        }
+
+        function eliminarBloque(index) {
+            if (confirm('¿Estás seguro de que quieres eliminar este bloque?')) {
+                bloques.splice(index, 1);
+                renderBloques();
+            }
+        }
+
+        function agregarBloque() {
+            const nombre = prompt('Ingresa el nombre del nuevo bloque:');
+            if (nombre && nombre.trim() !== '') {
+                bloques.push({
+                    name: nombre.trim(),
+                    folder_project: '',
+                    folder_cad: '',
+                    folder_offer: '',
+                    folder_cad_offer: '',
+                    csv_file: `static/data/${nombre.trim()}.csv`
+                });
+                renderBloques();
+            }
+        }
+
+        // Inicializar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            renderBloques();
+        });
+    </script>
+</body>
+</html>

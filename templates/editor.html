@@ -9,6 +9,10 @@
   {% csrf_token %}
   <h2>Editor de Fichero</h2>
   <input type="hidden" name="filename" value="{{ filename }}">
+  {% if use_session %}
+  <input type="hidden" name="use_session" value="true">
+  <input type="hidden" name="data_id" value="{{ data_id }}">
+  {% endif %}
   <textarea name="datos_modificados" id="fileContent" placeholder="Contenido del fichero..." rows="20"
     cols="80">{{ datos }}</textarea>
   <button type="submit">Guardar cambios</button>
