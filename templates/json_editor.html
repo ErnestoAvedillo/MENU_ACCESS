@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de JSON - {{ filename }}</title>
+  <link rel="stylesheet" href="{% static 'css/estiloss.css' %}">
+  <link rel="stylesheet" href="{% static 'css/json-editor.css' %}">
+</head>
+
+<body>
+  <div class="json-editor" id="jsonEditor">
+    <h2>🔧 Editor de JSON: {{ filename }}</h2>
+    
+    <!-- Contenedor principal del JSON -->
+    <div id="jsonContainer">
+      <p>Cargando editor JSON...</p>
+    </div>
+
+    <!-- Formulario para guardar -->
+    <form method="POST" action="{% url 'guarda' %}" onsubmit="return saveJSON()">
+      {% csrf_token %}
+      <input type="hidden" name="filename" value="{{ filename }}">
+      <input type="hidden" id="jsonOutput" name="datos_modificados" value="">
+      <textarea id="initialJsonData" style="display: none;">{{ datos|safe }}</textarea>
+      
+      <div class="json-save-form">
+        <button type="submit">💾 Guardar JSON</button>
+        <button type="button" class="json-cancel-btn" onclick="window.history.back()">❌ Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="{% static 'js/json-editor.js' %}"></script>
+</body>
+
+</html>

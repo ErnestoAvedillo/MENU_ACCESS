@@ -1,0 +1,337 @@
+/* Editor de tabla CSV */
+.table-editor {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.table-editor h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 24px;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 10px;
+}
+
+/* Controles de tabla */
+.table-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.table-controls button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table-controls button:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.table-controls button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Vista de pestañas para CSV */
+.csv-view-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.csv-view-tabs button {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s ease;
+}
+
+.csv-view-tabs button.active {
+    color: #3498db;
+    border-bottom-color: #3498db;
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.csv-view-tabs button:hover {
+    background: rgba(52, 152, 219, 0.05);
+    color: #2980b9;
+}
+
+/* Vista de texto CSV */
+.csv-text-view {
+    display: none;
+}
+
+.csv-text-view.active {
+    display: block;
+}
+
+.csv-textarea {
+    width: 100%;
+    min-height: 400px;
+    font-family: 'Courier New', monospace;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    background: #f8f9fa;
+    resize: vertical;
+}
+
+.csv-textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+}
+
+/* Controles específicos de vista de texto */
+.csv-text-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.csv-text-controls button {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.csv-text-controls button:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.csv-table th,
+.csv-table td {
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    text-align: left;
+    position: relative;
+}
+
+.csv-table th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.csv-table td {
+    background: white;
+    transition: background-color 0.2s ease;
+}
+
+.csv-table tr:hover td {
+    background-color: #f8f9fa;
+}
+
+.csv-table tr.selected td {
+    background-color: #e3f2fd;
+}
+
+/* Inputs editables en la tabla */
+.csv-table input[type="text"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 4px;
+    font-size: 14px;
+    color: #333;
+    font-family: inherit;
+}
+
+.csv-table input[type="text"]:focus {
+    outline: 2px solid #3498db;
+    background: white;
+    border-radius: 4px;
+}
+
+/* Controles de fila */
+.row-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    min-width: 120px;
+}
+
+.row-controls button {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.row-controls button:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.row-controls .delete-btn:hover {
+    background: #ffe6e6;
+    color: #d63384;
+    border-color: #d63384;
+}
+
+.row-controls .copy-btn:hover {
+    background: #e6f3ff;
+    color: #0066cc;
+    border-color: #0066cc;
+}
+
+.row-controls .move-btn {
+    cursor: grab;
+    font-weight: bold;
+}
+
+.row-controls .move-btn:active {
+    cursor: grabbing;
+}
+
+/* Arrastrar y soltar */
+.csv-table tr.dragging {
+    opacity: 0.5;
+}
+
+.csv-table tr.drop-target {
+    border-top: 3px solid #3498db;
+}
+
+/* Formulario de guardado */
+.save-form {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.save-form button {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.save-form button:hover {
+    background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cancel-btn {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+}
+
+.cancel-btn:hover {
+    background: linear-gradient(135deg, #495057 0%, #6c757d 100%) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .table-editor {
+        padding: 15px;
+    }
+
+    .csv-table {
+        font-size: 12px;
+    }
+
+    .csv-table th,
+    .csv-table td {
+        padding: 8px;
+    }
+
+    .table-controls {
+        flex-direction: column;
+    }
+
+    .row-controls {
+        min-width: 100px;
+    }
+}
+
+/* Modo de tabla responsiva en móviles */
+@media (max-width: 600px) {
+
+    .csv-table,
+    .csv-table thead,
+    .csv-table tbody,
+    .csv-table th,
+    .csv-table td,
+    .csv-table tr {
+        display: block;
+    }
+
+    .csv-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .csv-table tr {
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .csv-table td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+    }
+
+    .csv-table td:before {
+        content: attr(data-label) ": ";
+        position: absolute;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+        color: #666;
+    }
+}

@@ -1,0 +1,353 @@
+/* Editor de tabla JSON */
+.json-editor {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.json-editor h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 24px;
+    border-bottom: 3px solid #e67e22;
+    padding-bottom: 10px;
+}
+
+/* Vista de pestañas */
+.view-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.view-tabs button {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s ease;
+}
+
+.view-tabs button.active {
+    color: #e67e22;
+    border-bottom-color: #e67e22;
+    background: rgba(230, 126, 34, 0.1);
+}
+
+.view-tabs button:hover {
+    background: rgba(230, 126, 34, 0.05);
+    color: #d35400;
+}
+
+/* Controles de JSON */
+.json-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.json-controls button {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.json-controls button:hover {
+    background: linear-gradient(135deg, #d35400 0%, #e67e22 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.json-controls button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Vista de tabla para JSON */
+.json-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.json-table th,
+.json-table td {
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    text-align: left;
+    position: relative;
+}
+
+.json-table th {
+    background: linear-gradient(135deg, #fff5ec, #fdebd0);
+    font-weight: 600;
+    color: #d35400;
+    font-size: 14px;
+}
+
+.json-table td {
+    background: white;
+    transition: background-color 0.2s ease;
+}
+
+.json-table tr:hover td {
+    background-color: #fff8f0;
+}
+
+.json-table tr.selected td {
+    background-color: #fef2e7;
+}
+
+/* Inputs editables en la tabla JSON */
+.json-table input[type="text"],
+.json-table select {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 4px;
+    font-size: 14px;
+    color: #333;
+    font-family: inherit;
+}
+
+.json-table input[type="text"]:focus,
+.json-table select:focus {
+    outline: 2px solid #e67e22;
+    background: white;
+    border-radius: 4px;
+}
+
+/* Vista de texto JSON */
+.json-text-view {
+    display: none;
+}
+
+.json-text-view.active {
+    display: block;
+}
+
+.json-textarea {
+    width: 100%;
+    min-height: 400px;
+    font-family: 'Courier New', monospace;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    background: #f8f9fa;
+    resize: vertical;
+}
+
+.json-textarea:focus {
+    outline: none;
+    border-color: #e67e22;
+    box-shadow: 0 0 10px rgba(230, 126, 34, 0.2);
+}
+
+/* Campo específico para tipos de datos */
+.field-type {
+    font-size: 12px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #666;
+}
+
+/* Controles de fila JSON */
+.json-row-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    min-width: 120px;
+}
+
+.json-row-controls button {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.json-row-controls button:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.json-row-controls .delete-btn:hover {
+    background: #ffe6e6;
+    color: #d63384;
+    border-color: #d63384;
+}
+
+.json-row-controls .copy-btn:hover {
+    background: #e6f3ff;
+    color: #0066cc;
+    border-color: #0066cc;
+}
+
+.json-row-controls .move-btn {
+    cursor: grab;
+    font-weight: bold;
+}
+
+.json-row-controls .move-btn:active {
+    cursor: grabbing;
+}
+
+/* Estados de arrastrar y soltar para JSON */
+.json-table tr.dragging {
+    opacity: 0.5;
+}
+
+.json-table tr.drop-target {
+    border-top: 3px solid #e67e22;
+}
+
+/* Formulario de guardado JSON */
+.json-save-form {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.json-save-form button {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.json-save-form button:hover {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.json-cancel-btn {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+}
+
+.json-cancel-btn:hover {
+    background: linear-gradient(135deg, #495057 0%, #6c757d 100%) !important;
+}
+
+/* Mensaje de error */
+.json-error {
+    background: #ffe6e6;
+    border: 1px solid #ff9999;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+    color: #cc0000;
+    display: none;
+}
+
+.json-error.show {
+    display: block;
+}
+
+/* Responsive para editor JSON */
+@media (max-width: 768px) {
+    .json-editor {
+        padding: 15px;
+    }
+
+    .json-table {
+        font-size: 12px;
+    }
+
+    .json-table th,
+    .json-table td {
+        padding: 8px;
+    }
+
+    .json-controls {
+        flex-direction: column;
+    }
+
+    .json-row-controls {
+        min-width: 100px;
+    }
+
+    .view-tabs {
+        flex-direction: column;
+    }
+}
+
+/* Modo de tabla responsiva en móviles para JSON */
+@media (max-width: 600px) {
+
+    .json-table,
+    .json-table thead,
+    .json-table tbody,
+    .json-table th,
+    .json-table td,
+    .json-table tr {
+        display: block;
+    }
+
+    .json-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .json-table tr {
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .json-table td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+    }
+
+    .json-table td:before {
+        content: attr(data-label) ": ";
+        position: absolute;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+        color: #666;
+    }
+}

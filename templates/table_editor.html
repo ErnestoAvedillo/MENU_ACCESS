@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Tabla CSV - {{ filename }}</title>
+  <link rel="stylesheet" href="{% static 'css/estiloss.css' %}">
+  <link rel="stylesheet" href="{% static 'css/table-editor.css' %}">
+</head>
+
+<body>
+  <div class="table-editor" id="tableEditor">
+    <h2>📊 Editor de Tabla: {{ filename }}</h2>
+    
+    <!-- Contenedor de la tabla -->
+    <div id="tableContainer">
+      <p>Cargando tabla...</p>
+    </div>
+
+    <!-- Formulario para guardar -->
+    <form method="POST" action="{% url 'guarda' %}" onsubmit="return saveTable()">
+      {% csrf_token %}
+      <input type="hidden" name="filename" value="{{ filename }}">
+      <input type="hidden" id="csvOutput" name="datos_modificados" value="">
+      <input type="hidden" id="initialData" value="{{ datos }}">
+      
+      <div class="save-form">
+        <button type="submit">💾 Guardar Cambios</button>
+        <button type="button" class="cancel-btn" onclick="window.history.back()">❌ Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="{% static 'js/table-editor.js' %}"></script>
+</body>
+
+</html>

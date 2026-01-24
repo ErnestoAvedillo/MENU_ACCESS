@@ -1,0 +1,131 @@
+{% load static %}
+{% load menu_filters %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Menú de Ernesto®</title>
+  <!-- Aquí puedes incluir enlaces a CSS, fuentes, íconos, etc. -->
+  <link rel="stylesheet" href="{% static 'css/estiloss.css' %}">
+  <link rel="stylesheet" href="{% static 'css/enlaces-generales.css' %}">>
+
+<body>
+  <header>
+    <h1>Este es <strong> El menu de Ernesto®</strong></h1>
+    <div class="nav-buttons">
+      <a href="{% url 'home' %}?group_name=General" class="nav-btn">General</a>
+      <a href="{% url 'home' %}?group_name=Ofertas" class="nav-btn">Ofertas</a>
+      <a href="{% url 'home' %}?group_name=Desarrollos" class="nav-btn">Desarrollos</a>
+      <a href="{% url 'home' %}?group_name=Proyectos" class="nav-btn">Proyectos</a>
+      <a href="{% url 'home' %}?group_name=Of.Obsoletas" class="nav-btn">Ofertas Obsoletas</a>
+      <a href="{% url 'home' %}?group_name=Proy.Antiguos" class="nav-btn">Proyectos Antiguos</a>
+    </div>
+  </header>
+  <main>
+    <div class="contenedor">
+      {% if group_name.name == "General" %}
+      <div class="grid-container-vertical">
+        <div class="contenedor-section">
+          <div class="group-title">
+            <h2 class="titel">{{ group_name.name }}</h2>
+          </div>
+          <ul class="enlaces_generales">
+            {% for key, item in group_name.links.items %}
+            <li>
+              {% if item.link|is_url %}
+              <a href="{{ item.link }}" class="btn" target="_blank" rel="noopener noreferrer"> {{ item.name }}</a>
+              {% elif item.link %}
+              <a href="{% url 'abrir_carpeta' folder=item.link group_name=group_name.name %}" class="btn">{{ item.name }}</a>
+              {% else %}
+              <span class="btn disabled">{{ item.name }}</span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="contenedor-section">
+          <div class="group-title">
+            <h2 class="titel">Editor de lista de Proyectos</h2>
+          </div>
+          <ul class="enlaces_generales">
+            <li> <a href="{% url 'abrir' filename='Ofertas.csv' %}" class="btn">Edit Ofertas</a></li>
+            <li> <a href="{% url 'abrir' filename='Desarrollos.csv' %}" class="btn">Edit Desarrollos</a></li>
+            <li> <a href="{% url 'abrir' filename='OfObsoletas.csv' %}" class="btn">Edit Ofert. Obsoletas</a></li>
+            <li> <a href="{% url 'abrir' filename='Proyectos.csv' %}" class="btn">Edit Proyectos</a></li>
+            <li> <a href="{% url 'abrir' filename='PrAntiguos.csv' %}" class="btn">Edit Proy. Antiguos</a></li>
+          </ul>
+        </div>
+        <div class="contenedor-section">
+          <div class="group-title">
+            <h2 class="titel">Editor de JSONs</h2>
+          </div>
+          <ul class="enlaces_generales">
+            <li> <a href="{% url 'abrir' filename='Ofertas.json' %}" class="btn">Edit Ofertas</a></li>
+            <li> <a href="{% url 'abrir' filename='Desarrollos.json' %}" class="btn">Edit Desarrollos</a></li>
+            <li> <a href="{% url 'abrir' filename='OfObsoletas.json' %}" class="btn">Edit Ofert. Obsoletas</a></li>
+            <li> <a href="{% url 'abrir' filename='Proyectos.json' %}" class="btn">Edit Proyectos</a></li>
+            <li> <a href="{% url 'abrir' filename='PrAntiguos.json' %}" class="btn">Edit Proy. Antiguos</a></li>
+            <li> <a href="{% url 'abrir' filename='General.json' %}" class="btn">Edit General</a></li>
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+    {% if group_name.name == "Ofertas" or group_name.name == "Desarrollos" or group_name.name == "Of.Obsoletas" %}
+    <div class="grid-container">
+      {% for key, item in group_name.links.items %}
+      <div class="grid-item">
+        <h2 class="titel">{{item.name}} : {{ item.proyecto }}</h2>
+        <ul class="botonera">
+          <li>
+            {% with folder=group_name.folder_project|add:item.proyecto %}
+            <a href="{% url 'abrir_carpeta' folder=folder group_name=group_name.name %}" class="btn">Gestión</a>
+            {% endwith %}
+          </li>
+          <li>
+            {% with folder=group_name.folder_cad|add:item.proyecto %}
+            <a href="{% url 'abrir_carpeta' folder=folder group_name=group_name.name %}" class="btn">CAD</a>
+            {% endwith %}
+          </li>
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if group_name.name == "Proyectos" or group_name.name == "Proy.Antiguos" %}
+    <div class="grid-container">
+      {% for key, item in group_name.links.items %}
+      <div class="grid-item">
+        <h1 class="titel">{{item.name}} : {{ item.proyecto }}</h1>
+        <ul class="botonera">
+          <li>
+            {% with folder=group_name.folder_project|add:item.proyecto %}
+            <a href="{% url 'abrir_carpeta' folder=folder group_name=group_name.name %}" class="btn">Gestión</a>
+            {% endwith %}
+          </li>
+          <li>
+            {% with folder=group_name.folder_cad|add:item.proyecto %}
+            <a href="{% url 'abrir_carpeta' folder=folder group_name=group_name.name %}" class="btn">CAD</a>
+            {% endwith %}
+          </li>
+          <li>
+            {% with folder=group_name.folder_offer|add:item.proyecto %}
+            <a href="{% url 'abrir_carpeta' folder=folder group_name=group_name.name %}" class="btn">Offer</a>
+            {% endwith %}
+          </li>
+          <li>
+            {% with folder=group_name.folder_cad_offer|add:item.proyecto %}
+            <a href="{% url 'abrir_carpeta' folder=folder group_name=group_name.name %}" class="btn">CAD Offer</a>
+            {% endwith %}
+          </li>
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    </div>
+  </main>
+</body>
+
+</html>

@@ -1,0 +1,110 @@
+:root {
+  --enlace-font-size: 15px;
+  --enlace-padding: 16px;
+  --enlace-min-width: 180px;
+}
+
+.enlaces_generales {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  padding: 20px;
+  list-style: none;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Responsive grid para máximo aprovechamiento de pantalla */
+@media (min-width: 1600px) {
+  .enlaces_generales {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1599px) {
+  .enlaces_generales {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .enlaces_generales {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+  .enlaces_generales {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  .enlaces_generales {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 767px) {
+  .enlaces_generales {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+}
+
+.enlaces_generales li {
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  padding: var(--enlace-padding);
+  text-align: center;
+  font-size: var(--enlace-font-size);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.enlaces_generales li:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.enlaces_generales li a,
+.enlaces_generales li .btn {
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 500;
+  display: block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 12px 24px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.enlaces_generales li a:hover,
+.enlaces_generales li .btn:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  text-decoration: none;
+}
+
+.enlaces_generales li .btn.disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.enlaces_generales li .btn.disabled:hover {
+  transform: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
