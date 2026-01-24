@@ -56,6 +56,28 @@
             margin: 20px 0;
             text-align: center;
         }
+        .btn-order {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 0 2px;
+            font-size: 12px;
+        }
+        .btn-order:hover {
+            background-color: #0056b3;
+        }
+        .btn-order:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .order-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -100,7 +122,11 @@
                 bloqueDiv.innerHTML = `
                     <div class="bloque-header">
                         <h3>Bloque: ${bloque.name}</h3>
-                        ${bloque.name !== 'General' ? `<button type="button" class="btn-delete" onclick="eliminarBloque(${index})">Eliminar</button>` : ''}
+                        <div class="order-controls">
+                            ${index > 0 ? `<button type="button" class="btn-order" onclick="moverBloque(${index}, -1)" title="Subir">↑</button>` : '<button type="button" class="btn-order" disabled>↑</button>'}
+                            ${index < bloques.length - 1 ? `<button type="button" class="btn-order" onclick="moverBloque(${index}, 1)" title="Bajar">↓</button>` : '<button type="button" class="btn-order" disabled>↓</button>'}
+                            ${bloque.name !== 'General' ? `<button type="button" class="btn-delete" onclick="eliminarBloque(${index})">Eliminar</button>` : ''}
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -150,6 +176,23 @@
         function actualizarBloque(index, field, value) {
             bloques[index][field] = value;
             document.getElementById('bloques_json').value = JSON.stringify({bloques: bloques});
+        }
+
+        function moverBloque(index, direction) {
+            const newIndex = index + direction;
+            
+            // Verificar que el movimiento sea válido
+            if (newIndex < 0 || newIndex >= bloques.length) {
+                return;
+            }
+            
+            // Intercambiar los bloques
+            const temp = bloques[index];
+            bloques[index] = bloques[newIndex];
+            bloques[newIndex] = temp;
+            
+            // Re-renderizar la lista
+            renderBloques();
         }
 
         function eliminarBloque(index) {
