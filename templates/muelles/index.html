@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} - El Menú de Ernesto®</title>
+    <link rel="stylesheet" href="{% static 'css/estiloss.css' %}">
+    <style>
+        .muelles-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .menu-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .option-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .option-card a {
+            text-decoration: none;
+            color: #495057;
+        }
+        .option-card h3 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .back-button {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .back-button:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="muelles-container">
+        <a href="{% url 'home' %}" class="back-button">← Volver al Menú Principal</a>
+        
+        <h1>{{ titulo }}</h1>
+        <p>{{ descripcion }}</p>
+        
+        <div class="menu-options">
+            <div class="option-card">
+                <a href="{% url 'muelles_calculadora' %}">
+                    <h3>Calculadora de Muelles</h3>
+                    <p>Calcula las especificaciones básicas de muelles helicoidales</p>
+                </a>
+            </div>
+            
+            <div class="option-card">
+                <a href="#" onclick="alert('Próximamente disponible')">
+                    <h3>Catálogo de Muelles</h3>
+                    <p>Consulta el catálogo de muelles estándar</p>
+                </a>
+            </div>
+            
+            <div class="option-card">
+                <a href="#" onclick="alert('Próximamente disponible')">
+                    <h3>Diseño Avanzado</h3>
+                    <p>Herramientas avanzadas de diseño y análisis</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
