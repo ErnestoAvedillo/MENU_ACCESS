@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor de Bloques - El Menú de Ernesto®</title>
-    <link rel="stylesheet" href="{% static 'css/estiloss.css' %}">
-    <link rel="stylesheet" href="{% static 'css/json-editor.css' %}">
+    <link rel="stylesheet" href="{% static 'menuapp/css/estiloss.css' %}">
+    <link rel="stylesheet" href="{% static 'menuapp/css/json-editor.css' %}">
     <style>
         .bloque-item {
             border: 1px solid #ddd;
@@ -211,7 +211,7 @@
                     folder_cad: '',
                     folder_offer: '',
                     folder_cad_offer: '',
-                    csv_file: `static/data/${nombre.trim()}.csv`
+                    csv_file: `muelles/static/muelles/data/${nombre.trim()}.csv`
                 });
                 renderBloques();
             }

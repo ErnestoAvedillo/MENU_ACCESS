@@ -1,4 +1,4 @@
-from muelles.lineal.lineal import MuelleLineal
+from muelles.lineal.compresion import MuelleLineal
 from muelles.pymodels.material import Material
 
 # Crear material primero

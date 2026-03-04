@@ -16,7 +16,7 @@
 
 .form-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     gap: 20px;
     margin: 20px 0;
 }
@@ -25,6 +25,11 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
+}
+
+.results-container {
+    margin-top: 20px;
+    grid-template-columns: 1fr;
 }
 
 .form-section.full-width {
@@ -254,7 +259,7 @@
 /* Spring End Selector Styles */
 .spring-end-selector {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     margin-top: 10px;
 }
@@ -495,4 +500,154 @@
         width: 50px;
         height: 65px;
     }
+}
+
+/* Styles moved from calculadora.html inline attributes */
+.muted-small {
+    color: #6c757d;
+}
+
+.image-preview {
+    text-align: center;
+    margin-top: 10px;
+}
+.image-preview .preview-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.field-note {
+    margin: 0 0 15px 0;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.spring-thumb {
+    width: 90px;
+    height: auto;
+    object-fit: contain;
+}
+
+.toggle-note {
+    display: block;
+    margin-top: 5px;
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.error-box {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+}
+.error-box .error-text {
+    color: #721c24;
+    margin: 0;
+}
+
+.muelle-title {
+    color: #007bff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.spec-title {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+.spec-title.material { color: #6f42c1; }
+.spec-title.dimensions { color: #28a745; }
+.spec-title.espiras { color: #ffc107; }
+.spec-title.mechanics { color: #dc3545; }
+
+.spec-content {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.badge {
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-left: 3px;
+    display: inline-block;
+    font-weight: 600;
+}
+.badge.green { background: #d4edda; color: #155724; }
+.badge.orange { background: #fff3cd; color: #856404; }
+.badge.red { background: #f8d7da; color: #721c24; }
+
+/* Analysis section styles */
+.section-separator {
+    grid-template-columns: repeat(2, 1fr);
+    border-top: 1px solid #dee2e6;
+    padding-top: 20px;
+}
+.section-subtitle {
+    color: #495057;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.chart-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.chart-blue { border: 1px solid #17a2b8; }
+.chart-red { border: 1px solid #dc3545; }
+
+.chart-title { text-align: center; margin-bottom: 15px; }
+.chart-blue-title { color: #17a2b8; }
+.chart-red-title { color: #dc3545; }
+
+.chart-image-wrapper { text-align: center; margin-bottom: 15px; }
+.chart-img { max-width: 100%; height: auto; border-radius: 8px; }
+
+.info-note { padding: 10px; border-radius: 5px; font-size: 13px; }
+.info-blue { background: #e7f3ff; border-left: 4px solid #17a2b8; }
+.info-red { background: #fff3cd; border-left: 4px solid #dc3545; }
+
+.goodman-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+.metric-box { background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 13px; }
+.metric-title { margin: 0 0 8px 0; color: #495057; }
+.metric-content { line-height: 1.4; }
+
+.safety-value { }
+.safety-label { }
+
+.metric-center { text-align: center; }
+.safety-value { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+.safety-label { font-size: 12px; font-weight: bold; }
+
+.safety-green { color: #28a745; }
+.safety-orange { color: #ffc107; }
+.safety-red { color: #dc3545; }
+
+.info-list { margin: 10px 0; padding-left: 20px; font-size: 14px; }
+
+.tip-box { margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; }
+
+.traceback {
+    white-space: pre-wrap;
+    background: #1e1e1e;
+    color: #f8f8f2;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    overflow: auto;
+    max-height: 320px;
 }

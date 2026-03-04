@@ -1,0 +1,580 @@
+<!-- Resultados - Ancho completo -->
+<div class="results-container">
+    {% if resultado %}
+        {% if resultado.error %}
+            <div class="error-box">
+                <h4>⚠️ Error:</h4>
+                <p class="error-text">{{ resultado.error }}</p>
+                {% if resultado.traceback %}
+                <pre class="traceback">{{ resultado.traceback }}</pre>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- Especificaciones Completas del Muelle -->
+            <div class="muelle-specs-container">
+                <h3 class="muelle-title">🏷️ ESPECIFICACIONES TÉCNICAS DEL MUELLE</h3>
+                <!-- Especificaciones principales en formato horizontal completo -->
+                <div class="specs-grid">
+                    <div class="spec-card">
+                        <h4 class="spec-title material">🔬 MATERIAL</h4>
+                        <div class="spec-content">
+                            <strong>Tipo:</strong> {{ resultado.material_nombre }}<br>
+                            <strong>Módulo G:</strong> {{ resultado.modulo_corte|floatformat:0 }} N/mm²
+                            <strong>Ø Hilo:</strong> {{ resultado.diametero_hilo|floatformat:2 }} mm
+                            {% if resultado.tolerancia_diametro %}
+                            <br><strong>Tolerancia:</strong> ±{{ resultado.tolerancia_diametro|floatformat:3 }} mm
+                            {% endif %}
+                            {% if resultado.RMa_min and resultado.RMa_max %}
+                            <br><strong>RMa:</strong> {{ resultado.RMa_min|floatformat:0 }}-{{ resultado.RMa_max|floatformat:0 }} MPa
+                            {% endif %}
+                            {% if resultado.longitud_bloqueo %}
+                            <br><strong>Long. Bloqueo:</strong> {{ resultado.longitud_bloqueo|floatformat:2 }} mm
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="spec-card">
+                        <h4 class="spec-title dimensions">📐 DIMENSIONES</h4>
+                        <div class="spec-content">
+                            <strong>Ø Medio:</strong> {{ resultado.diametro_medio|floatformat:2 }} mm<br>
+                            <strong>Ø Exterior:</strong> {{ resultado.diametro_exterior|floatformat:2 }} mm<br>
+                            <strong>Ø Interior:</strong> {{ resultado.diametro_interior|floatformat:2 }} mm<br>
+                        </div>
+                    </div>
+                    
+                    <div class="spec-card">
+                        <h4 class="spec-title espiras">🌀 ESPIRAS</h4>
+                        <div class="spec-content">
+                            <strong>Total:</strong> {{ resultado.numero_espiras|floatformat:1 }}<br>
+                            <strong>Útiles:</strong> {{ resultado.numero_espiras_utiles|floatformat:1 }}<br>
+                            <strong>Pitch:</strong> {{ resultado.pitch|floatformat:2 }} mm<br>
+                            <strong>Long. Libre:</strong> {{ resultado.longitud_libre|floatformat:2 }} mm<br>
+                            <strong>Long. Hilo:</strong> {{ resultado.longitud_hilo|floatformat:2 }} mm
+                        </div>
+                    </div>
+                    
+                    <div class="spec-card">
+                        <h4 class="spec-title mechanics">⚙️ MECÁNICAS</h4>
+                        <div class="spec-content">
+                            <strong>Tipo:</strong>
+                            {% if resultado.tipo_muelle == 'traccion' %}
+                                Tracción
+                            {% else %}
+                                Compresión
+                            {% endif %}
+                            <br>
+                            <strong>Constante K:</strong> {{ resultado.constante_muelle|floatformat:2 }} N/mm<br>
+                            <strong>Índice C:</strong> {{ resultado.indice_muelle|floatformat:2 }}<br>
+                            <strong>Factor Wahl:</strong> {{ resultado.factor_wahl|floatformat:3 }}
+                            {% if resultado.factor_wahl_category %}
+                            <span class="badge {{ resultado.factor_wahl_category }}">{{ resultado.factor_wahl_category|upper }}</span>
+                            {% endif %}
+                            {% if resultado.tipo_muelle == 'traccion' %}
+                            <br><strong>Tensión inicial:</strong> {{ resultado.tension_inicial|floatformat:2 }} N
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos avanzados si están disponibles -->
+                {% if resultado.longitud_inicial or resultado.fuerza_inicial or resultado.tension_media or resultado.factor_seguridad %}
+                <div class="section-separator">
+                    <h4 class="section-subtitle">📊 ANÁLISIS AVANZADO</h4>
+                    
+                    <div class="results-grid">
+                        <!-- Condiciones de Trabajo -->
+                        {% if resultado.longitud_inicial or resultado.fuerza_inicial %}
+                        <div class="results-group forces">
+                            <h4 class="results-subtitle forces-title">⚡ Condiciones de Trabajo</h4>
+                            {% if resultado.longitud_inicial %}
+                            <div class="result-item">
+                                <span>Longitud inicial:</span> <span class="result-value">{{ resultado.longitud_inicial|floatformat:2 }} mm</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.longitud_final %}
+                            <div class="result-item">
+                                <span>Longitud final:</span> <span class="result-value">{{ resultado.longitud_final|floatformat:2 }} mm</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.compresion %}
+                            <div class="result-item">
+                                <span>Compresión:</span> <span class="result-value">{{ resultado.compresion|floatformat:2 }} mm</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.fuerza_inicial %}
+                            <div class="result-item">
+                                <span>Fuerza inicial:</span> <span class="result-value">{{ resultado.fuerza_inicial|floatformat:1 }} N</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.fuerza_final %}
+                            <div class="result-item">
+                                <span>Fuerza final:</span> <span class="result-value">{{ resultado.fuerza_final|floatformat:1 }} N</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Análisis de Fatiga -->
+                        {% if resultado.tension_media or resultado.factor_seguridad %}
+                        <div class="results-group analysis">
+                            <h4 class="results-subtitle analysis-title">🧮 Análisis de Fatiga</h4>
+                            {% if resultado.tension_media %}
+                            <div class="result-item">
+                                <span>Tensión media:</span> <span class="result-value">{{ resultado.tension_media|floatformat:1 }} MPa</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.tension_alternativa %}
+                            <div class="result-item">
+                                <span>Tensión alternativa:</span> <span class="result-value">{{ resultado.tension_alternativa|floatformat:1 }} MPa</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.factor_seguridad %}
+                            <div class="result-item">
+                                <span>Factor de seguridad:</span>
+                                <span class="result-value">
+                                    {{ resultado.factor_seguridad|floatformat:2 }}
+                                    {% if resultado.factor_seguridad_categoria %}
+                                    <span class="badge {{ resultado.factor_seguridad_categoria }}">{{ resultado.factor_seguridad_categoria|upper }}</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.ciclos_vida %}
+                            <div class="result-item">
+                                <span>Vida útil estimada:</span> <span class="result-value">{{ resultado.ciclos_vida|floatformat:0 }} ciclos</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Sección de gráficos y análisis técnico -->
+                {% if resultado.curva_esfuerzos or resultado.diagrama_goodman or resultado.curva_recorrido or resultado.curva_diametros %}
+                <div class="graph-section">
+                    <h4 class="graph-title">📊 ANÁLISIS GRÁFICO Y DE FATIGA</h4>
+                    
+                    <!-- Grid de gráficos -->
+                    <div class="charts-grid">
+                        
+                        <!-- Curva de Esfuerzos -->
+                        {% if resultado.curva_esfuerzos %}
+                        <div class="chart-card chart-blue">
+                            <h5 class="chart-title chart-blue-title">📈 CURVAS DE CARGAS VS. LONGITUD</h5>
+                            
+                            <div class="chart-image-wrapper">
+                                <img class="chart-img" src="data:image/png;base64,{{ resultado.curva_esfuerzos.imagen }}" 
+                                    alt="Curvas de Esfuerzos vs Posición">
+                            </div>
+                            
+                            <div class="info-note info-blue">
+                                <strong>💡 Interpretación:</strong> Las gráficas muestran cómo varían la carga y la tensión de cortante 
+                                a medida que el muelle se comprime desde su longitud libre hasta las posiciones de trabajo especificadas.
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="info-note info-gray">
+                            <strong>⚠️ No hay curva de esfuerzos disponible.</strong>
+                        </div>
+                        {% endif %}
+
+                        <!-- Curva de Recorrido -->
+                        {% if resultado.curva_recorrido %}
+                        <div class="chart-card chart-blue">
+                            <h5 class="chart-title chart-blue-title">📈 CURVAS DE CARGAS VS. RECORRIDO</h5>
+                            
+                            <div class="chart-image-wrapper">
+                                <img class="chart-img" src="data:image/png;base64,{{ resultado.curva_recorrido.imagen }}" 
+                                    alt="Curvas de Recorrido vs Posición">
+                            </div>
+                            
+                            <div class="info-note info-blue">
+                                <strong>💡 Interpretación:</strong> Las gráficas muestran cómo varían la carga y la tensión de cortante 
+                                a medida que el muelle se comprime desde su longitud libre hasta las posiciones de trabajo especificadas.
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="info-note info-gray">
+                            <strong>⚠️ No hay curva de recorrido disponible.</strong>
+                        </div>
+                        {% endif %}
+
+                        <!-- Curva de Diametros -->
+                        {% if resultado.curva_diametros %}
+                        <div class="chart-card chart-green">
+                            <h5 class="chart-title chart-green-title">📏 CURVAS DE DIÁMETROS</h5>
+                            
+                            <div class="chart-image-wrapper">
+                                <img class="chart-img" src="data:image/png;base64,{{ resultado.curva_diametros.imagen }}" 
+                                    alt="Curvas de Diámetros vs Posición">
+                            </div>
+                            
+                            <div class="info-note info-green">
+                                <strong>💡 Interpretación:</strong> Las gráficas muestran cómo varía el diámetro del muelle a medida que se comprime desde su longitud libre hasta las posiciones de trabajo especificadas.
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="info-note info-gray">
+                            <strong>⚠️ No hay curva de diámetros disponible.</strong>
+                        </div>
+                        {% endif %}
+                        
+                        
+                        <!-- Diagrama de Goodman -->
+                        {% if resultado.diagrama_goodman %}
+                            {% if resultado.diagrama_goodman.imagen %}
+                            <div class="chart-card chart-red">
+                                <h5 class="chart-title chart-red-title">⚡ DIAGRAMA DE GOODMAN</h5>
+                                
+                                <div class="chart-image-wrapper">
+                                    <img class="chart-img" src="data:image/png;base64,{{ resultado.diagrama_goodman.imagen }}" 
+                                        alt="Diagrama de Goodman">
+                                </div>
+                                
+                                <!-- Datos del diagrama de Goodman -->
+                                <div class="goodman-metrics">
+                                    <div class="metric-box">
+                                        <h6 class="metric-title">🎯 Condiciones</h6>
+                                        <div class="metric-content">
+                                            <strong>T. Máx:</strong> {{ resultado.diagrama_goodman.tensiones.tension_max }} MPa<br>
+                                            <strong>T. Mín:</strong> {{ resultado.diagrama_goodman.tensiones.tension_min }} MPa<br>
+                                            <strong>C. Máx:</strong> {{ resultado.diagrama_goodman.tensiones.carga_max }} N<br>
+                                            <strong>C. Mín:</strong> {{ resultado.diagrama_goodman.tensiones.carga_min }} N
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="metric-box">
+                                        <h6 class="metric-title">🛡️ Seguridad</h6>
+                                        <div class="metric-content metric-center">
+                                            <div class="safety-value {% if resultado.diagrama_goodman.analisis.safety_factor >= 2.0 %}safety-green{% elif resultado.diagrama_goodman.analisis.safety_factor >= 1.5 %}safety-orange{% else %}safety-red{% endif %}">
+                                                {{ resultado.diagrama_goodman.analisis.safety_factor|floatformat:2 }}
+                                            </div>
+                                            <div class="safety-label {% if resultado.diagrama_goodman.analisis.safety_factor >= 2.0 %}safety-green{% elif resultado.diagrama_goodman.analisis.safety_factor >= 1.5 %}safety-orange{% else %}safety-red{% endif %}">
+                                                {% if resultado.diagrama_goodman.analisis.safety_factor >= 2.0 %}
+                                                    ✅ MUY SEGURO
+                                                {% elif resultado.diagrama_goodman.analisis.safety_factor >= 1.5 %}
+                                                    ⚠️ ACEPTABLE
+                                                {% else %}
+                                                    ❌ INSUFICIENTE
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="info-note info-red">
+                                    <strong>📖 Explicación:</strong> El diagrama muestra la resistencia a la fatiga. 
+                                    El punto de trabajo debe estar dentro de la región segura (azul) para garantizar durabilidad.
+                                </div>
+                            </div>
+                            {% elif resultado.diagrama_goodman.error %}
+                                <div class="error-box"><!-- Resultados - Ancho completo -->
+<div class="results-container">
+    {% if resultado %}
+        {% if resultado.error %}
+            <div class="error-box">
+                <h4>⚠️ Error:</h4>
+                <p class="error-text">{{ resultado.error }}</p>
+                {% if resultado.traceback %}
+                <pre class="traceback">{{ resultado.traceback }}</pre>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- Especificaciones Completas del Muelle -->
+            <div class="muelle-specs-container">
+                <h3 class="muelle-title">🏷️ ESPECIFICACIONES TÉCNICAS DEL MUELLE</h3>
+                <!-- Especificaciones principales en formato horizontal completo -->
+                <div class="specs-grid">
+                    <div class="spec-card">
+                        <h4 class="spec-title material">🔬 MATERIAL</h4>
+                        <div class="spec-content">
+                            <strong>Tipo:</strong> {{ resultado.material_nombre }}<br>
+                            <strong>Módulo G:</strong> {{ resultado.modulo_corte|floatformat:0 }} N/mm²
+                            <strong>Ø Hilo:</strong> {{ resultado.diametero_hilo|floatformat:2 }} mm
+                            {% if resultado.tolerancia_diametro %}
+                            <br><strong>Tolerancia:</strong> ±{{ resultado.tolerancia_diametro|floatformat:3 }} mm
+                            {% endif %}
+                            {% if resultado.RMa_min and resultado.RMa_max %}
+                            <br><strong>RMa:</strong> {{ resultado.RMa_min|floatformat:0 }}-{{ resultado.RMa_max|floatformat:0 }} MPa
+                            {% endif %}
+                            {% if resultado.longitud_bloqueo %}
+                            <br><strong>Long. Bloqueo:</strong> {{ resultado.longitud_bloqueo|floatformat:2 }} mm
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="spec-card">
+                        <h4 class="spec-title dimensions">📐 DIMENSIONES</h4>
+                        <div class="spec-content">
+                            <strong>Ø Medio:</strong> {{ resultado.diametro_medio|floatformat:2 }} mm<br>
+                            <strong>Ø Exterior:</strong> {{ resultado.diametro_exterior|floatformat:2 }} mm<br>
+                            <strong>Ø Interior:</strong> {{ resultado.diametro_interior|floatformat:2 }} mm<br>
+                        </div>
+                    </div>
+                    
+                    <div class="spec-card">
+                        <h4 class="spec-title espiras">🌀 ESPIRAS</h4>
+                        <div class="spec-content">
+                            <strong>Total:</strong> {{ resultado.numero_espiras|floatformat:1 }}<br>
+                            <strong>Útiles:</strong> {{ resultado.numero_espiras_utiles|floatformat:1 }}<br>
+                            <strong>Pitch:</strong> {{ resultado.pitch|floatformat:2 }} mm<br>
+                            <strong>Long. Libre:</strong> {{ resultado.longitud_libre|floatformat:2 }} mm<br>
+                            <strong>Long. Hilo:</strong> {{ resultado.longitud_hilo|floatformat:2 }} mm
+                        </div>
+                    </div>
+                    
+                    <div class="spec-card">
+                        <h4 class="spec-title mechanics">⚙️ MECÁNICAS</h4>
+                        <div class="spec-content">
+                            <strong>Tipo:</strong>
+                            {% if resultado.tipo_muelle == 'traccion' %}
+                                Tracción
+                            {% else %}
+                                Compresión
+                            {% endif %}
+                            <br>
+                            <strong>Constante K:</strong> {{ resultado.constante_muelle|floatformat:2 }} N/mm<br>
+                            <strong>Índice C:</strong> {{ resultado.indice_muelle|floatformat:2 }}<br>
+                            <strong>Factor Wahl:</strong> {{ resultado.factor_wahl|floatformat:3 }}
+                            {% if resultado.factor_wahl_category %}
+                            <span class="badge {{ resultado.factor_wahl_category }}">{{ resultado.factor_wahl_category|upper }}</span>
+                            {% endif %}
+                            {% if resultado.tipo_muelle == 'traccion' %}
+                            <br><strong>Tensión inicial:</strong> {{ resultado.tension_inicial|floatformat:2 }} N
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos avanzados si están disponibles -->
+                {% if resultado.longitud_inicial or resultado.fuerza_inicial or resultado.tension_media or resultado.factor_seguridad %}
+                <div class="section-separator">
+                    <h4 class="section-subtitle">📊 ANÁLISIS AVANZADO</h4>
+                    
+                    <div class="results-grid">
+                        <!-- Condiciones de Trabajo -->
+                        {% if resultado.longitud_inicial or resultado.fuerza_inicial %}
+                        <div class="results-group forces">
+                            <h4 class="results-subtitle forces-title">⚡ Condiciones de Trabajo</h4>
+                            {% if resultado.longitud_inicial %}
+                            <div class="result-item">
+                                <span>Longitud inicial:</span> <span class="result-value">{{ resultado.longitud_inicial|floatformat:2 }} mm</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.longitud_final %}
+                            <div class="result-item">
+                                <span>Longitud final:</span> <span class="result-value">{{ resultado.longitud_final|floatformat:2 }} mm</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.compresion %}
+                            <div class="result-item">
+                                <span>Compresión:</span> <span class="result-value">{{ resultado.compresion|floatformat:2 }} mm</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.fuerza_inicial %}
+                            <div class="result-item">
+                                <span>Fuerza inicial:</span> <span class="result-value">{{ resultado.fuerza_inicial|floatformat:1 }} N</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.fuerza_final %}
+                            <div class="result-item">
+                                <span>Fuerza final:</span> <span class="result-value">{{ resultado.fuerza_final|floatformat:1 }} N</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Análisis de Fatiga -->
+                        {% if resultado.tension_media or resultado.factor_seguridad %}
+                        <div class="results-group analysis">
+                            <h4 class="results-subtitle analysis-title">🧮 Análisis de Fatiga</h4>
+                            {% if resultado.tension_media %}
+                            <div class="result-item">
+                                <span>Tensión media:</span> <span class="result-value">{{ resultado.tension_media|floatformat:1 }} MPa</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.tension_alternativa %}
+                            <div class="result-item">
+                                <span>Tensión alternativa:</span> <span class="result-value">{{ resultado.tension_alternativa|floatformat:1 }} MPa</span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.factor_seguridad %}
+                            <div class="result-item">
+                                <span>Factor de seguridad:</span>
+                                <span class="result-value">
+                                    {{ resultado.factor_seguridad|floatformat:2 }}
+                                    {% if resultado.factor_seguridad_categoria %}
+                                    <span class="badge {{ resultado.factor_seguridad_categoria }}">{{ resultado.factor_seguridad_categoria|upper }}</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
+                            {% if resultado.ciclos_vida %}
+                            <div class="result-item">
+                                <span>Vida útil estimada:</span> <span class="result-value">{{ resultado.ciclos_vida|floatformat:0 }} ciclos</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Sección de gráficos y análisis técnico -->
+                {% if resultado.curva_esfuerzos or resultado.diagrama_goodman or resultado.curva_recorrido or resultado.curva_diametros %}
+                <div class="graph-section">
+                    <h4 class="graph-title">📊 ANÁLISIS GRÁFICO Y DE FATIGA</h4>
+                    
+                    <!-- Grid de gráficos -->
+                    <div class="charts-grid">
+                        
+                        <!-- Curva de Esfuerzos -->
+                        {% if resultado.curva_esfuerzos %}
+                        <div class="chart-card chart-blue">
+                            <h5 class="chart-title chart-blue-title">📈 CURVAS DE CARGAS VS. LONGITUD</h5>
+                            
+                            <div class="chart-image-wrapper">
+                                <img class="chart-img" src="data:image/png;base64,{{ resultado.curva_esfuerzos.imagen }}" 
+                                    alt="Curvas de Esfuerzos vs Posición">
+                            </div>
+                            
+                            <div class="info-note info-blue">
+                                <strong>💡 Interpretación:</strong> Las gráficas muestran cómo varían la carga y la tensión de cortante 
+                                a medida que el muelle se comprime desde su longitud libre hasta las posiciones de trabajo especificadas.
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="info-note info-gray">
+                            <strong>⚠️ No hay curva de esfuerzos disponible.</strong>
+                        </div>
+                        {% endif %}
+
+                        <!-- Curva de Recorrido -->
+                        {% if resultado.curva_recorrido %}
+                        <div class="chart-card chart-blue">
+                            <h5 class="chart-title chart-blue-title">📈 CURVAS DE CARGAS VS. RECORRIDO</h5>
+                            
+                            <div class="chart-image-wrapper">
+                                <img class="chart-img" src="data:image/png;base64,{{ resultado.curva_recorrido.imagen }}" 
+                                    alt="Curvas de Recorrido vs Posición">
+                            </div>
+                            
+                            <div class="info-note info-blue">
+                                <strong>💡 Interpretación:</strong> Las gráficas muestran cómo varían la carga y la tensión de cortante 
+                                a medida que el muelle se comprime desde su longitud libre hasta las posiciones de trabajo especificadas.
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="info-note info-gray">
+                            <strong>⚠️ No hay curva de recorrido disponible.</strong>
+                        </div>
+                        {% endif %}
+
+                        <!-- Curva de Diametros -->
+                        {% if resultado.curva_diametros %}
+                        <div class="chart-card chart-green">
+                            <h5 class="chart-title chart-green-title">📏 CURVAS DE DIÁMETROS</h5>
+                            
+                            <div class="chart-image-wrapper">
+                                <img class="chart-img" src="data:image/png;base64,{{ resultado.curva_diametros.imagen }}" 
+                                    alt="Curvas de Diámetros vs Posición">
+                            </div>
+                            
+                            <div class="info-note info-green">
+                                <strong>💡 Interpretación:</strong> Las gráficas muestran cómo varía el diámetro del muelle a medida que se comprime desde su longitud libre hasta las posiciones de trabajo especificadas.
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="info-note info-gray">
+                            <strong>⚠️ No hay curva de diámetros disponible.</strong>
+                        </div>
+                        {% endif %}
+                        
+                        
+                        <!-- Diagrama de Goodman -->
+                        {% if resultado.diagrama_goodman %}
+                            {% if resultado.diagrama_goodman.imagen %}
+                            <div class="chart-card chart-red">
+                                <h5 class="chart-title chart-red-title">⚡ DIAGRAMA DE GOODMAN</h5>
+                                
+                                <div class="chart-image-wrapper">
+                                    <img class="chart-img" src="data:image/png;base64,{{ resultado.diagrama_goodman.imagen }}" 
+                                        alt="Diagrama de Goodman">
+                                </div>
+                                
+                                <!-- Datos del diagrama de Goodman -->
+                                <div class="goodman-metrics">
+                                    <div class="metric-box">
+                                        <h6 class="metric-title">🎯 Condiciones</h6>
+                                        <div class="metric-content">
+                                            <strong>T. Máx:</strong> {{ resultado.diagrama_goodman.tensiones.tension_max }} MPa<br>
+                                            <strong>T. Mín:</strong> {{ resultado.diagrama_goodman.tensiones.tension_min }} MPa<br>
+                                            <strong>C. Máx:</strong> {{ resultado.diagrama_goodman.tensiones.carga_max }} N<br>
+                                            <strong>C. Mín:</strong> {{ resultado.diagrama_goodman.tensiones.carga_min }} N
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="metric-box">
+                                        <h6 class="metric-title">🛡️ Seguridad</h6>
+                                        <div class="metric-content metric-center">
+                                            <div class="safety-value {% if resultado.diagrama_goodman.analisis.safety_factor >= 2.0 %}safety-green{% elif resultado.diagrama_goodman.analisis.safety_factor >= 1.5 %}safety-orange{% else %}safety-red{% endif %}">
+                                                {{ resultado.diagrama_goodman.analisis.safety_factor|floatformat:2 }}
+                                            </div>
+                                            <div class="safety-label {% if resultado.diagrama_goodman.analisis.safety_factor >= 2.0 %}safety-green{% elif resultado.diagrama_goodman.analisis.safety_factor >= 1.5 %}safety-orange{% else %}safety-red{% endif %}">
+                                                {% if resultado.diagrama_goodman.analisis.safety_factor >= 2.0 %}
+                                                    ✅ MUY SEGURO
+                                                {% elif resultado.diagrama_goodman.analisis.safety_factor >= 1.5 %}
+                                                    ⚠️ ACEPTABLE
+                                                {% else %}
+                                                    ❌ INSUFICIENTE
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="info-note info-red">
+                                    <strong>📖 Explicación:</strong> El diagrama muestra la resistencia a la fatiga. 
+                                    El punto de trabajo debe estar dentro de la región segura (azul) para garantizar durabilidad.
+                                </div>
+                            </div>
+                            {% elif resultado.diagrama_goodman.error %}
+                                <div class="error-box">
+                                    <h5>⚠️ Error generando Diagrama de Goodman</h5>
+                                    <p class="error-text">{{ resultado.diagrama_goodman.error }}</p>
+                                    {% if resultado.diagrama_goodman.traceback %}
+                                        <pre class="traceback">{{ resultado.diagrama_goodman.traceback }}</pre>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="info-note info-gray">
+                                    <strong>⚠️ No hay diagrama de Goodman disponible.</strong>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+                                    <h5>⚠️ Error generando Diagrama de Goodman</h5>
+                                    <p class="error-text">{{ resultado.diagrama_goodman.error }}</p>
+                                    {% if resultado.diagrama_goodman.traceback %}
+                                        <pre class="traceback">{{ resultado.diagrama_goodman.traceback }}</pre>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="info-note info-gray">
+                                    <strong>⚠️ No hay diagrama de Goodman disponible.</strong>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
+</div>

@@ -12,6 +12,7 @@ import hashlib
 
 
 URL_RE = re.compile(r'^(https?://)', re.IGNORECASE)
+DATA_DIR = os.path.join(settings.BASE_DIR, "muelles", "static", "muelles", "data")
 
 
 def open_show_folder(ruta):
@@ -19,7 +20,7 @@ def open_show_folder(ruta):
 
 
 def open_json(file_to_open, asJSON=True):
-    json_file = os.path.join(settings.BASE_DIR, "static", "data", file_to_open)
+    json_file = os.path.join(DATA_DIR, file_to_open)
     with open(json_file, 'r', encoding='utf-8') as file:
         my_json = file.read()
     if asJSON:
@@ -30,7 +31,7 @@ def open_json(file_to_open, asJSON=True):
 
 def open_csv(file_to_open, asJSON=True):
     output_dict = {}
-    csv_file = os.path.join(settings.BASE_DIR, "static", "data", file_to_open)
+    csv_file = os.path.join(DATA_DIR, file_to_open)
     with open(csv_file, 'r', encoding='utf-8') as file:
         if asJSON:
             for i, fila in enumerate(csv.DictReader(file)):
@@ -41,7 +42,7 @@ def open_csv(file_to_open, asJSON=True):
 
 
 def save(filename, data):
-    full_filename = os.path.join(settings.BASE_DIR, "static", "data", filename)
+    full_filename = os.path.join(DATA_DIR, filename)
     parsed_data = re.sub(r"/", "%2F", data)
     with open(full_filename, 'w', encoding='utf-8', newline='') as file:
         file.write(parsed_data)
@@ -76,9 +77,9 @@ def get_links():
             }
             
             # Cargar el CSV correspondiente si existe
-            csv_filename = bloque.get("csv_file", f"static/data/{name}.csv")
+            csv_filename = bloque.get("csv_file", f"muelles/static/muelles/data/{name}.csv")
             csv_basename = os.path.basename(csv_filename)
-            if os.path.exists(os.path.join(settings.BASE_DIR, "static", "data", csv_basename)):
+            if os.path.exists(os.path.join(DATA_DIR, csv_basename)):
                 lista_items = open_csv(csv_basename)
                 grupo_json["links"] = lista_items
             
@@ -106,7 +107,7 @@ def home(request):
 
     group_name = grupos.get(group_name_param, grupos.get('General', {}))
     
-    return render(request, 'index.html', {
+    return render(request, 'menuapp/index.html', {
         'group_name': group_name, 
         'grupos': grupos,
         'bloques': bloques
@@ -119,12 +120,12 @@ def editor(request, datos, filename):
     
     # Usar editor de tabla para archivos CSV
     if extension == ".csv":
-        return render(request, 'table_editor.html', {'datos': parsed_data, 'filename': filename})
+        return render(request, 'menuapp/table_editor.html', {'datos': parsed_data, 'filename': filename})
     # Usar editor de JSON para archivos JSON
     elif extension == ".json":
-        return render(request, 'json_editor.html', {'datos': parsed_data, 'filename': filename})
+        return render(request, 'menuapp/json_editor.html', {'datos': parsed_data, 'filename': filename})
     else:
-        return render(request, 'editor.html', {'datos': parsed_data, 'filename': filename})
+        return render(request, 'menuapp/editor.html', {'datos': parsed_data, 'filename': filename})
 
 
 def abrir(request, filename):
@@ -175,7 +176,7 @@ def editor_with_session(request, data_id, filename):
     
     # Usar editor de tabla para archivos CSV
     if extension == ".csv":
-        return render(request, 'table_editor.html', {
+        return render(request, 'menuapp/table_editor.html', {
             'datos': parsed_data, 
             'filename': filename,
             'use_session': True,
@@ -183,14 +184,14 @@ def editor_with_session(request, data_id, filename):
         })
     # Usar editor de JSON para archivos JSON
     elif extension == ".json":
-        return render(request, 'json_editor.html', {
+        return render(request, 'menuapp/json_editor.html', {
             'datos': parsed_data, 
             'filename': filename,
             'use_session': True,
             'data_id': data_id
         })
     else:
-        return render(request, 'editor.html', {
+        return render(request, 'menuapp/editor.html', {
             'datos': parsed_data, 
             'filename': filename,
             'use_session': True,
@@ -240,7 +241,7 @@ def bloques_editor(request):
     except:
         bloques = []
     
-    return render(request, 'bloques_editor.html', {
+    return render(request, 'menuapp/bloques_editor.html', {
         'bloques_json': json.dumps(bloques),
         'bloques': bloques
     })
@@ -256,7 +257,7 @@ def json_visualizer(request):
         bloques = []
         bloques_dinamicos = []
     
-    return render(request, 'json_visualizer.html', {
+    return render(request, 'menuapp/json_visualizer.html', {
         'bloques': bloques,
         'bloques_dinamicos': bloques_dinamicos
     })

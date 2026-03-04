@@ -128,6 +128,10 @@ function setupFormValidation() {
         let hasErrors = false;
 
         requiredInputs.forEach(input => {
+            const isHidden = input.offsetParent === null;
+            if (isHidden) {
+                return;
+            }
             if (!input.value) {
                 input.style.borderColor = '#dc3545';
                 input.style.backgroundColor = '#fff5f5';
@@ -140,6 +144,77 @@ function setupFormValidation() {
             alert('⚠️ Por favor complete todos los campos obligatorios');
         }
     });
+}
+
+function setupSpringTypeSelector() {
+    const typeSelect = document.getElementById('tipo_muelle');
+    const tensionGroup = document.getElementById('traccion_tension_group');
+    const tensionInput = document.getElementById('tension_inicial');
+    const initialLabel = document.querySelector('label[for="longitud_inicial"]');
+    const finalLabel = document.querySelector('label[for="longitud_final"]');
+    const compresionEndOptions = document.querySelectorAll('.compresion-end-option');
+    const traccionEndOptions = document.querySelectorAll('.traccion-end-option');
+    const endOptions = document.querySelectorAll('.end-option');
+    const endHiddenInput = document.getElementById('tipo_final');
+
+    if (!typeSelect) {
+        return;
+    }
+
+    const updateByType = () => {
+        const isTraccion = typeSelect.value === 'traccion';
+
+        if (tensionGroup) {
+            tensionGroup.style.display = isTraccion ? 'block' : 'none';
+        }
+
+        if (tensionInput) {
+            tensionInput.required = isTraccion;
+        }
+
+        if (initialLabel) {
+            initialLabel.textContent = isTraccion ? 'Longitud inicial estirada (mm):' : 'Longitud inicial (mm):';
+        }
+
+        if (finalLabel) {
+            finalLabel.textContent = isTraccion ? 'Longitud final estirada (mm):' : 'Longitud final (mm):';
+        }
+
+        compresionEndOptions.forEach(option => {
+            option.style.display = isTraccion ? 'none' : '';
+        });
+
+        traccionEndOptions.forEach(option => {
+            option.style.display = isTraccion ? '' : 'none';
+        });
+
+        if (endHiddenInput) {
+            const compresionValues = ['abierto', 'cerrado', 'semi-cerrado', 'rectificado'];
+            const traccionValues = [
+                'anillo_doble_aleman_entero_centrado',
+                'anillo_doble_aleman_entero_lateral',
+                'anillo_simple_aleman_centrado',
+                'static/img/anillo_simple_aleman_entero_lateral.png',
+                'static/img/anillo_simple_aleman_entero_centrado.png',
+                'anillo_especial'
+            ];
+
+            const validValues = isTraccion ? traccionValues : compresionValues;
+            const defaultValue = isTraccion ? 'anillo_doble_aleman_entero_centrado' : 'rectificado';
+
+            if (!validValues.includes(endHiddenInput.value)) {
+                const defaultOption = document.querySelector(`.end-option[data-value="${defaultValue}"]`);
+                if (defaultOption) {
+                    endOptions.forEach(option => option.classList.remove('selected'));
+                    defaultOption.classList.add('selected');
+                    endHiddenInput.value = defaultValue;
+                }
+            }
+        }
+    };
+
+    typeSelect.addEventListener('change', updateByType);
+    updateByType();
 }
 
 // Configurar selector visual de extremos de muelle
@@ -204,6 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupFormatDetection();
     setupMaterialDetection();
     setupFormValidation();
+    setupSpringTypeSelector();
     setupSpringEndSelector();
     setupMaterialPropertyDetection();
 

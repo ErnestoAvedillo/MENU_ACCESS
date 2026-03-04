@@ -9,9 +9,11 @@ import matplotlib
 matplotlib.use('Agg')  # Backend sin GUI para el servidor
 import matplotlib.pyplot as plt
 import numpy as np
-from muelles.lineal.lineal import MuelleLineal
+from muelles.lineal.compresion import MuelleCompresion
+from muelles.lineal.traccion import MuelleTraccion
 from muelles.pymodels.material import Material
 from muelles.lineal.goodman import GoodmanData, GoodmanAnalyzer
+import traceback
 
 # Create your views here.
 
@@ -55,7 +57,279 @@ def index(request):
         'descripcion': 'Herramienta para calcular especificaciones de muelles'
     })
 
-def calculadora(request):
+
+def calculadora_compresion(request):
+    """Vista de la calculadora de muelles de compresión"""
+    resultado = None
+    materials = get_available_materials()
+    muelle = None  # Inicializar la variable
+    if request.method == 'POST':
+        try:
+            datos_entrada_muelle = get_data_spring(request)
+            # Crear objeto Material desde el código
+            material_obj = Material(nombre_material=datos_entrada_muelle['material'])
+
+            muelle = MuelleCompresion(
+                material=material_obj,  
+                diametro_hilo=float(request.POST.get('diametero_hilo', 0))  # Usar el nombre correcto del HTML
+            )
+            muelle.validate_diameters(datos_entrada_muelle['diametro_exterior'], None, None)
+            muelle.calculate_spring_properties(
+                numero_espiras=datos_entrada_muelle['numero_espiras'],
+                pitch=None,
+                longitud_libre=datos_entrada_muelle['longitud_libre']
+            )
+            muelle_data = muelle.get_spring_data()
+            
+            # Generar curva de esfuerzos si se proporcionan longitudes inicial y final
+            muelle.add_posicion_carga(datos_entrada_muelle['longitud_inicial'])
+            muelle.add_posicion_carga(datos_entrada_muelle['longitud_final'])
+
+            # Generar curva de esfuerzos vs recorrido
+            curva_esfuerzo_vs_travel = None
+            try:
+                curva_imagen_b64 = muelle.get_forces_vs_travel_graph()
+                curva_esfuerzo_vs_travel = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_travels()
+                }
+            except Exception:
+                curva_esfuerzo_vs_travel = None
+
+            curva_esfuerzo_vs_position = None
+            try:
+                curva_imagen_b64 = muelle.get_forces_vs_position_graph()
+                curva_esfuerzo_vs_position = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_positions()
+                }
+            except Exception:
+                curva_esfuerzo_vs_position = None
+
+            #Generar curva de diametros vs posición
+            curva_diametros_vs_posicion = None
+            try:
+                curva_imagen_b64 = muelle.get_diameter_vs_position_graph()
+                curva_diametros_vs_posicion = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_positions()
+                }
+            except Exception:
+                curva_diametros_vs_posicion = None
+
+            # Generar diagrama de Goodman usando método del objeto MuelleLineal
+            goodman_data = None
+            muelle.shot_peening = datos_entrada_muelle['shot_peening'] == 'si'
+            muelle.numero_ciclos = datos_entrada_muelle['numero_ciclos']
+            try:
+                # Si el usuario envió longitudes, pasar esas; si no, el método usará valores por defecto
+                goodman_data = muelle.create_goodman_diagram()
+            except Exception:
+                goodman_data = None
+            resultado = {
+                    'material_nombre': muelle.material.nombre_material,
+                    'modulo_corte': muelle.material.shear_modulus,
+                    'diametro_medio': round(muelle_data.get('diametro_medio', 0), 2),
+                    'diametero_hilo': round(muelle_data.get('diametro_hilo', 0), 2),
+                    'indice_muelle': round(muelle_data.get('indice_muelle', 0), 2),
+                    'constante_muelle': round(muelle_data.get('constante_muelle', 0), 2),
+                    'pitch': round(muelle_data.get('pitch', 0), 2),
+                    'numero_espiras_utiles': round(muelle_data.get('numero_espiras_utiles', 0), 1),
+                    'longitud_hilo': round(muelle_data.get('longitud_hilo', 0), 2),
+                    'factor_wahl': round(muelle_data.get('factor_wahl', 0), 3),
+                    'longitud_libre': muelle.longitud_libre,
+                    'numero_espiras': muelle.numero_espiras,
+                    'diametro_exterior': muelle_data.get('diametro_medio', 0) + muelle_data.get('diametro_hilo', 0),
+                    'diametro_interior': muelle_data.get('diametro_medio', 0) - muelle_data.get('diametro_hilo', 0),
+                    'longitud_bloqueo': round(muelle_data.get('longitud_bloqueo', 0), 2),
+                    'curva_esfuerzos': curva_esfuerzo_vs_position,
+                    'curva_recorrido': curva_esfuerzo_vs_travel,
+                    'curva_diametros': curva_diametros_vs_posicion,
+                    'diagrama_goodman': goodman_data,
+                    'numero_ciclos': muelle.numero_ciclos,
+                    'shot_peening': muelle.shot_peening,
+                    'tension_inicial': round(muelle_data.get('tension_inicial', 0), 2)
+                }
+        except Exception as e:
+            print(f"Error en cálculo de muelle: {e}")
+            tb = traceback.format_exc()
+            if muelle is not None:
+                try:
+                    muelle_data = muelle.get_spring_data()
+                    for key, value in muelle_data.items():
+                        print(f"{key}: {value}")
+                except:
+                    pass
+            resultado = {'error': f'Error en los cálculos: {str(e)}', 'traceback': tb}
+    return render(request, 'muelles/calculadora_compresion.html', {
+        'resultado': resultado,
+        'materiales': materials,
+    })
+
+
+def calculadora_traccion(request):
+    """Vista de la calculadora de muelles de tracción"""
+    resultado = None
+    materials = get_available_materials()
+    muelle = None  # Inicializar la variable
+    if request.method == 'POST':
+        try:
+            datos_entrada_muelle = get_data_spring(request)
+                    # Crear objeto Material desde el código
+            material_obj = Material(nombre_material=datos_entrada_muelle['material'])
+
+            muelle = MuelleTraccion(
+                material=material_obj,  
+                diametro_hilo=float(request.POST.get('diametero_hilo', 0))  # Usar el nombre correcto del HTML
+            )
+            muelle.validate_diameters(datos_entrada_muelle['diametro_exterior'], None, None)
+            muelle.calculate_spring_properties(
+                numero_espiras=datos_entrada_muelle['numero_espiras'],
+                pitch=None,
+                longitud_libre=datos_entrada_muelle['longitud_libre']
+            )
+            muelle.set_tension_inicial(float(request.POST.get('tension_inicial', 0)) if request.POST.get('tension_inicial') else 0.0)
+            muelle_data = muelle.get_spring_data()
+
+            tension_inicial = float(request.POST.get('tension_inicial', 0)) if request.POST.get('tension_inicial') else 0.0
+            muelle.set_tension_inicial(tension_inicial)
+            
+            diametro_exterior = float(request.POST.get('diametro_exterior', 0)) if request.POST.get('diametro_exterior') else None
+            longitud_libre = float(request.POST.get('longitud_libre', 0))
+            numero_espiras = float(request.POST.get('numero_espiras', 0))
+            numero_ciclos = float(request.POST.get('numero_ciclos', 1e6))  # Valor por defecto de 1 millón de ciclos
+
+            # Asignar el número de ciclos al objeto muelle (ya leído desde el formulario)
+            muelle.numero_ciclos = numero_ciclos
+            muelle.shot_peening = request.POST.get('shot_peening') == 'si'
+
+            muelle.validate_diameters(diametro_exterior, None, None)
+            muelle.calculate_spring_properties(
+                numero_espiras=numero_espiras,
+                pitch=None,
+                longitud_libre=longitud_libre
+            )
+            muelle_data = muelle.get_spring_data()
+            
+            # Generar curva de esfuerzos si se proporcionan longitudes inicial y final
+            longitud_inicial = float(request.POST.get('longitud_inicial', 0))
+            longitud_final = float(request.POST.get('longitud_final', 0))
+            muelle.add_posicion_carga(longitud_inicial)
+            muelle.add_posicion_carga(longitud_final)
+
+            # Generar curva de esfuerzos usando método del objeto MuelleLineal
+            curva_esfuerzo_vs_position = None
+            try:
+                curva_imagen_b64 = muelle.get_forces_vs_position_graph()
+                curva_esfuerzo_vs_position = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_positions()
+                }
+            except Exception:
+                curva_esfuerzo_vs_position = None
+
+            # Generar curva de esfuerzos vs recorrido
+            curva_esfuerzo_vs_travel = None
+            try:
+                curva_imagen_b64 = muelle.get_forces_vs_travel_graph()
+                curva_esfuerzo_vs_travel = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_travels()
+                }
+            except Exception:
+                curva_esfuerzo_vs_travel = None
+
+            # Generar curva de esfuerzos vs posición
+            curva_esfuerzo_vs_position = None
+            try:
+                curva_imagen_b64 = muelle.get_forces_vs_position_graph()
+                curva_esfuerzo_vs_position = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_positions()
+                }
+            except Exception:
+                curva_esfuerzo_vs_position = None
+
+            #Generar curva de diametros vs posición
+            curva_diametros_vs_posicion = None
+            try:
+                curva_imagen_b64 = muelle.get_diameter_vs_position_graph()
+                curva_diametros_vs_posicion = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_positions()
+                }
+            except Exception:
+                curva_diametros_vs_posicion = None
+
+            # Generar diagrama de Goodman usando método del objeto MuelleLineal
+            goodman_data = None
+            try:
+                # Si el usuario envió longitudes, pasar esas; si no, el método usará valores por defecto
+                goodman_data = muelle.create_goodman_diagram()
+            except Exception:
+                goodman_data = None
+
+            resultado = {
+                    'material_nombre': muelle.material.nombre_material,
+                    'modulo_corte': muelle.material.shear_modulus,
+                    'diametro_medio': round(muelle_data.get('diametro_medio', 0), 2),
+                    'diametero_hilo': round(muelle_data.get('diametro_hilo', 0), 2),
+                    'indice_muelle': round(muelle_data.get('indice_muelle', 0), 2),
+                    'constante_muelle': round(muelle_data.get('constante_muelle', 0), 2),
+                    'pitch': round(muelle_data.get('pitch', 0), 2),
+                    'numero_espiras_utiles': round(muelle_data.get('numero_espiras_utiles', 0), 1),
+                    'longitud_hilo': round(muelle_data.get('longitud_hilo', 0), 2),
+                    'factor_wahl': round(muelle_data.get('factor_wahl', 0), 3),
+                    'longitud_libre': muelle.longitud_libre,
+                    'numero_espiras': muelle.numero_espiras,
+                    'diametro_exterior': muelle_data.get('diametro_medio', 0) + muelle_data.get('diametro_hilo', 0),
+                    'diametro_interior': muelle_data.get('diametro_medio', 0) - muelle_data.get('diametro_hilo', 0),
+                    'shot_peening': muelle.shot_peening,
+                    'tension_inicial': round(muelle_data.get('tension_inicial', 0), 2),
+                    'curva_esfuerzos': curva_esfuerzo_vs_position,
+                    'curva_recorrido': curva_esfuerzo_vs_travel,
+                    'curva_diametros': curva_diametros_vs_posicion,
+                    'diagrama_goodman': goodman_data,
+                    'numero_ciclos': muelle.numero_ciclos,
+                    'shot_peening': muelle.shot_peening,
+                    'tension_inicial': round(muelle_data.get('tension_inicial', 0), 2)
+                }
+        except Exception as e:
+            print(f"Error en cálculo de muelle: {e}")
+            tb = traceback.format_exc()
+            if muelle is not None:
+                try:
+                    muelle_data = muelle.get_spring_data()
+                    for key, value in muelle_data.items():
+                        print(f"{key}: {value}")
+                except:
+                    pass
+            resultado = {'error': f'Error en los cálculos: {str(e)}', 'traceback': tb}
+        return render(request, 'muelles/calculadora_traccion.html', {
+            'resultado': resultado,
+            'materiales': materials,
+        })
+
+def get_data_spring(request):
+    datos_muelle = {
+        'material': request.POST.get('material'),
+        'shot_peening': request.POST.get('shot_peening') == 'si',
+        'diametro_exterior': float(request.POST.get('diametro_exterior', 0)) if request.POST.get('diametro_exterior') else None,
+        'longitud_libre': float(request.POST.get('longitud_libre', 0)),
+        'numero_espiras': float(request.POST.get('numero_espiras', 0)),
+        'numero_ciclos': float(request.POST.get('numero_ciclos', 1e6)),
+        'longitud_inicial': float(request.POST.get('longitud_inicial', 0)) if request.POST.get('longitud_inicial') else None,
+        'longitud_final': float(request.POST.get('longitud_final', 0)) if request.POST.get('longitud_final') else None,
+    }
+    return datos_muelle
+
+def get_curves(muelle):
+    """Función para generar las curvas de esfuerzos vs posición y esfuerzos vs recorrido"""
+    # Esta función se puede implementar para generar las curvas usando los métodos del objeto MuelleLineal
+    # Generar curva de esfuerzos vs posición
+
+
+def calculadora(request, template_name='muelles/calculadora_compresion.html', default_tipo='lineal'):
     """Vista de la calculadora de muelles"""
     resultado = None
     materiales = get_available_materials()
@@ -64,6 +338,7 @@ def calculadora(request):
     if request.method == 'POST':
         try:
             # Obtener datos del formulario
+            tipo_muelle = str(request.POST.get('tipo_muelle', default_tipo)).strip().lower()
             material_code = request.POST.get('material')
             longitud_inicial = float(request.POST.get('longitud_inicial', 0)) if request.POST.get('longitud_inicial') else None
             longitud_final = float(request.POST.get('longitud_final', 0)) if request.POST.get('longitud_final') else None
@@ -71,17 +346,29 @@ def calculadora(request):
             
             # Crear objeto Material desde el código
             material_obj = Material(nombre_material=material_code)
+
+            spring_class = MuelleTraccion if tipo_muelle == 'traccion' else MuelleCompresion
             
-            muelle = MuelleLineal(
-                material=material_obj,
+            muelle = spring_class(
+                material=material_obj,  
                 diametro_hilo=float(request.POST.get('diametero_hilo', 0))  # Usar el nombre correcto del HTML
             )
+            # Propiedades adicionales desde el formulario
+            muelle.shot_peening = shot_peening
+
+            if isinstance(muelle, MuelleTraccion):
+                tension_inicial = float(request.POST.get('tension_inicial', 0)) if request.POST.get('tension_inicial') else 0.0
+                muelle.set_tension_inicial(tension_inicial)
             
             diametro_exterior = float(request.POST.get('diametro_exterior', 0)) if request.POST.get('diametro_exterior') else None
             diametro_interior = float(request.POST.get('diametro_interior', 0)) if request.POST.get('diametro_interior') else None
             diametro_medio = float(request.POST.get('diametro_medio', 0)) if request.POST.get('diametro_medio') else None
             longitud_libre = float(request.POST.get('longitud_libre', 0))
             numero_espiras = float(request.POST.get('numero_espiras', 0))
+            numero_ciclos = float(request.POST.get('numero_ciclos', 1e6))  # Valor por defecto de 1 millón de ciclos
+
+            # Asignar el número de ciclos al objeto muelle (ya leído desde el formulario)
+            muelle.numero_ciclos = numero_ciclos
 
             muelle.validate_diameters(diametro_exterior, diametro_interior, diametro_medio)
             muelle.calculate_spring_properties(
@@ -92,17 +379,71 @@ def calculadora(request):
             muelle_data = muelle.get_spring_data()
             
             # Generar curva de esfuerzos si se proporcionan longitudes inicial y final
-            curva_datos = None
-            if longitud_inicial and longitud_final:
-                curva_datos = generate_stress_curve(muelle, longitud_inicial, longitud_final, longitud_libre)
+            muelle.add_posicion_carga(longitud_inicial)
+            muelle.add_posicion_carga(longitud_final)
+
+            # Generar curva de esfuerzos usando método del objeto MuelleLineal
+            curva_esfuerzo_vs_position = None
+            try:
+                curva_imagen_b64 = muelle.get_forces_vs_position_graph()
+                curva_esfuerzo_vs_position = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_positions()
+                }
+            except Exception:
+                curva_esfuerzo_vs_position = None
+
+            # Generar curva de esfuerzos vs recorrido
+            curva_esfuerzo_vs_travel = None
+            try:
+                curva_imagen_b64 = muelle.get_forces_vs_travel_graph()
+                curva_esfuerzo_vs_travel = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_travels()
+                }
+            except Exception:
+                curva_esfuerzo_vs_travel = None
+
+            # Generar curva de esfuerzos vs posición
+            curva_esfuerzo_vs_position = None
+            try:
+                curva_imagen_b64 = muelle.get_forces_vs_position_graph()
+                curva_esfuerzo_vs_position = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_positions()
+                }
+            except Exception:
+                curva_esfuerzo_vs_position = None
+
+            #Generar curva de diametros vs posición
+            curva_diametros_vs_posicion = None
+            try:
+                curva_imagen_b64 = muelle.get_diameter_vs_position_graph()
+                curva_diametros_vs_posicion = {
+                    'imagen': curva_imagen_b64,
+                    'datos': muelle.get_data_positions()
+                }
+            except Exception:
+                curva_diametros_vs_posicion = None
+
+            # Generar diagrama de Goodman usando método del objeto MuelleLineal
+            goodman_data = None
+            try:
+                # Si el usuario envió longitudes, pasar esas; si no, el método usará valores por defecto
+                goodman_data = muelle.create_goodman_diagram()
+            except Exception:
+                goodman_data = None
+            # if longitud_inicial and longitud_final:
+            #     curva_esfuerzo_vs_position = generate_stress_curve(muelle, longitud_inicial, longitud_final, longitud_libre)
             
             # Generar diagrama de Goodman
-            goodman_data = None
-            if longitud_inicial and longitud_final:
-                goodman_data = generate_goodman_diagram(muelle, longitud_inicial, longitud_final, shot_peening)
+            # goodman_data = None
+            # if longitud_inicial and longitud_final:
+                # goodman_data = generate_goodman_diagram(muelle, longitud_inicial, longitud_final, shot_peening, numero_ciclos)
             
             # Obtener los datos calculados
             resultado = {
+                'tipo_muelle': tipo_muelle,
                 'material_nombre': muelle.material.nombre_material,
                 'modulo_corte': muelle.material.shear_modulus,
                 'diametro_medio': round(muelle_data.get('diametro_medio', 0), 2),
@@ -118,12 +459,18 @@ def calculadora(request):
                 'diametro_exterior': muelle_data.get('diametro_medio', 0) + muelle_data.get('diametro_hilo', 0),
                 'diametro_interior': muelle_data.get('diametro_medio', 0) - muelle_data.get('diametro_hilo', 0),
                 'longitud_bloqueo': round(muelle_data.get('longitud_bloqueo', 0), 2),
-                'curva_esfuerzos': curva_datos,
+                'curva_esfuerzos': curva_esfuerzo_vs_position,
+                'curva_recorrido': curva_esfuerzo_vs_travel,
+                'curva_diametros': curva_diametros_vs_posicion,
                 'diagrama_goodman': goodman_data,
+                'numero_ciclos': muelle.numero_ciclos,
+                'shot_peening': muelle.shot_peening,
+                'tension_inicial': round(muelle_data.get('tension_inicial', 0), 2)
             }
             
         except Exception as e:
             print(f"Error en cálculo de muelle: {e}")
+            tb = traceback.format_exc()
             if muelle is not None:
                 try:
                     muelle_data = muelle.get_spring_data()
@@ -131,9 +478,9 @@ def calculadora(request):
                         print(f"{key}: {value}")
                 except:
                     pass
-            resultado = {'error': f'Error en los cálculos: {str(e)}'}
+            resultado = {'error': f'Error en los cálculos: {str(e)}', 'traceback': tb}
     
-    return render(request, 'muelles/calculadora.html', {
+    return render(request, template_name, {
         'resultado': resultado,
         'materiales': materiales
     })
@@ -212,7 +559,7 @@ def generate_stress_curve(muelle, longitud_inicial, longitud_final, longitud_lib
         return None
 
 
-def generate_goodman_diagram(muelle, longitud_inicial, longitud_final, shot_peening=False):
+def generate_goodman_diagram(muelle, longitud_inicial, longitud_final, shot_peening=False,numero_ciclos=1e6):
     """Genera el diagrama de Goodman para el muelle"""
     try:
         # Calcular tensiones máxima y mínima
@@ -230,7 +577,8 @@ def generate_goodman_diagram(muelle, longitud_inicial, longitud_final, shot_peen
         goodman_data = GoodmanData(
             material=muelle.material,
             diameter=muelle.diametero_hilo,
-            carga="torsion"  # Para muelles helicoidales es carga de torsión
+            carga="torsion",  # Para muelles helicoidales es carga de torsión
+            numero_ciclos=numero_ciclos
         )
         
         analyzer = GoodmanAnalyzer(goodman_data, shot_peening=shot_peening)

@@ -5,6 +5,7 @@ from ..pymodels.material import Material
 from muelles.regresiones.factor_f.usar_modelo_factor_f import ModeloFactorF
 from math import log10
 import io
+import base64
 
 class GoodmanData(BaseModel):
     """Modelo de datos para el diagrama de Goodman - solo validación y datos"""
@@ -71,14 +72,16 @@ class GoodmanAnalyzer:
         # factor de fatiga
         modelo_factor_f = ModeloFactorF()
         self.factor_f = modelo_factor_f.predecir(self.Ssu)
-        if self.data.cycles >= 1e6:
-            self.Ssf_prime = self.Sse_prime
-        # elif self.data.cycles <= 1e3:
-        #     self.Ssf_prime = self.Ssu * self.data.cycles**(log10(self.factor_f)/3)  # Aproximación para bajos ciclos
+        if self.data.cycles <= 1e3:
+            self.Ssf_prime = self.Sut * self.data.cycles**(log10(self.factor_f)/3)  # Aproximación para bajos ciclos
         else:
-            a = self.factor_f  * self.Ssu**2 /  self.Sse_prime
-            b = -log10(self.factor_f  * self.Ssu / self.Sse_prime) / 3
-            self.Ssf_prime = a * self.data.cycles**b
+            if self.data.cycles > 1e6:
+                cycles = 1e6  # Limitar a 1 millón de ciclos para la predicción
+            else:
+                cycles = self.data.cycles
+            a = (self.factor_f  * self.Sut)**2 /  self.Sse_prime
+            b = -log10(self.factor_f  * self.Sut / self.Sse_prime) / 3
+            self.Ssf_prime = a * cycles**b
         # Límite de fatiga corregido (Sse)
         # self.Sse = self.k_a * self.k_b * self.k_c * self.k_d * self.k_e *self.Sse_prime
         self.Sse = self.Sse_prime
@@ -144,16 +147,19 @@ class GoodmanAnalyzer:
         
         if show_plot:
             plt.show()
-        
+
         return fig
 
-    def get_diagram_image(self):
-        """Retorna la imagen del diagrama de Goodman como un array de bytes"""
-        fig = self.plot_diagram(0, 0, show_plot=False)  # Graficar sin mostrar
-        buf = io.BytesIO()
-        fig.savefig(buf, format='png')
-        buf.seek(0)
-        return buf.read()
+    def get_diagram_image(self, sigma_max: float, sigma_min: float):
+        """Retorna la imagen del diagrama de Goodman en base64"""
+        fig = self.plot_diagram(sigma_max, sigma_min, show_plot=False)
+        # Guardar diagrama en base64
+        buffer = io.BytesIO()
+        fig.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+        buffer.seek(0)
+        goodman_imagen = base64.b64encode(buffer.getvalue()).decode()
+        plt.close(fig)
+        return goodman_imagen
     
     def calculate_safety_factor(self, sigma_max: float, sigma_min: float) -> float:
         """
@@ -214,10 +220,14 @@ class GoodmanAnalyzer:
 class Goodman(GoodmanAnalyzer):
     """Clase de retrocompatibilidad - usa la nueva arquitectura internamente"""
     
-    def __init__(self, material: Material, diameter: float, carga: str = "axial"):
-        data = GoodmanData(material=material, diameter=diameter, carga=carga)
-        super().__init__(data)
+    def __init__(self, material: Material, diameter: float, carga: str = "axial", numero_ciclos: int = 1e6, shot_peening: bool = False):
+        data = GoodmanData(material=material, diameter=diameter, carga=carga, numero_ciclos=numero_ciclos)
+        super().__init__(data, shot_peening=shot_peening)
     
-    def plot_diagramm(self, sigma_max: float, sigma_min: float):
+    def plot_goodman_graph(self, sigma_max: float, sigma_min: float):
         """Método original para retrocompatibilidad"""
         return self.plot_diagram(sigma_max, sigma_min, show_plot=True)
+    
+    def get_goodman_graph(self, sigma_max: float, sigma_min: float):
+        """Método original para retrocompatibilidad"""
+        return self.plot_diagram(sigma_max, sigma_min, show_plot=False)

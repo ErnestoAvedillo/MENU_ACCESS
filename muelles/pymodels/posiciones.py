@@ -3,6 +3,7 @@ from typing import Optional, List
 
 class PosicionCarga(BaseModel):
     posicion: float
+    recorrido: float
     carga: Optional[float] = None
     tension: Optional[float] = None
     diametro_externo: Optional[float] = None
@@ -10,11 +11,12 @@ class PosicionCarga(BaseModel):
 class PosicionesTable(BaseModel):
     posiciones: List[PosicionCarga] = []
 
-    def add_posicion_carga(self, posicion: float, carga: Optional[float] = None,
+    def add_posicion_carga(self, posicion: float, recorrido: float, carga: Optional[float] = None,
                            tension: Optional[float] = None, diametro_externo: Optional[float] = None):
         """Agrega una nueva posición con sus características a la tabla"""
         nueva_posicion = PosicionCarga(
             posicion=posicion,
+            recorrido=recorrido,
             carga=carga,
             tension=tension,
             diametro_externo=diametro_externo

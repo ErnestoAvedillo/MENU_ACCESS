@@ -1,0 +1,51 @@
+{% load static %}
+<div class="form-section compact">
+    <h3>🔧 Material y Configuración</h3>
+    
+    <div class="form-group">
+        <label for="material">Material:</label>
+        <select name="material" id="material" required>
+            <option value="">Seleccione un material...</option>
+            {% for material in materiales %}
+                <option value="{{ material.code }}" 
+                        {% if request.POST.material == material.code %}selected{% endif %}
+                        data-shear-modulus="{{ material.shear_modulus }}"
+                        data-elastic-factor="{{ material.elastic_factor }}">
+                    {{ material.name }}
+                    {% if material.shear_modulus %}
+                        - Módulo: {{ material.shear_modulus }} N/mm²
+                    {% endif %}
+                </option>
+            {% empty %}
+                <option value="SL">SL - Acero de alto carbono</option>
+                <option value="SM">SM - Acero medio carbono</option>
+                <option value="SH">SH - Acero duro</option>
+            {% endfor %}
+        </select>
+        <small class="muted-small">Materiales cargados desde base de datos técnica</small>
+    </div>
+    
+    <div class="form-group">
+        <label for="diametero_hilo">Diámetro del hilo (mm):</label>
+        <input type="number" 
+                name="diametero_hilo" 
+                id="diametero_hilo" 
+                step="0.1" 
+                min="0.1" 
+                value="{{ request.POST.diametero_hilo }}"
+                required>
+    </div>
+    <a href="{% url 'muelles_index' %}" class="info-link">Tipo muelle: {% firstof request.POST.tipo_muelle default_tipo %}</a>
+    <div class="form-group">
+        <label>Shot peening:</label>
+        <div class="toggle-container">
+            <input type="checkbox" name="shot_peening" id="shot_peening" value="si"
+                    {% if request.POST.shot_peening == 'si' %}checked{% endif %}>
+            <label for="shot_peening" class="toggle-label">
+                <span class="toggle-switch"></span>
+                Activado
+            </label>
+            <small class="toggle-note">Mejora la resistencia a la fatiga</small>
+        </div>
+    </div>
+</div>
