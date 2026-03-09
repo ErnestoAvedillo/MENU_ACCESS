@@ -51,9 +51,9 @@ class MuelleCompresion(MuelleLineal):
         self.longitud_libre = longitud_libre
         self.calculo_espiras_utiles(numero_espiras=numero_espiras)
         self.set_numero_espiras(numero_espiras_utiles=self.numero_espiras_utiles,
-                                    pitch=pitch,
-                                    longitud_libre=longitud_libre
-                                    )
+                                pitch=pitch,
+                                longitud_libre=longitud_libre
+                                )
         if self.numero_espiras is None:
             self.calculo_numero_espiras(numero_espiras_utiles=self.numero_espiras_utiles)
         self.calcular_factor_de_wahl()
@@ -130,7 +130,8 @@ class MuelleCompresion(MuelleLineal):
             recorrido=self.longitud_libre - longitud,
             carga=carga,
             tension=tension,
-            diametro_externo=diametro_externo
+            diametro_externo=diametro_externo,
+            diametro_interno=max(diametro_externo - 2 * self.diametero_hilo, 0)
         )
     
     def calcular_diametro_externo_en_posicion(self, longitud:float):
@@ -245,7 +246,8 @@ class MuelleCompresion(MuelleLineal):
         return plot_data
 
     def get_diameter_vs_position_graph(self, show=False):
-        """Grafica diametro vs posicion y agrega un esquema con circunferencias."""
+        """Grafica diametro vs posicion y agrega un esquema con
+        circunferencias."""
         tabla_posiciones = self.posiciones.posiciones
         posiciones = [pc.posicion for pc in tabla_posiciones]
         diametros = [pc.diametro_externo for pc in tabla_posiciones]
@@ -274,16 +276,39 @@ class MuelleCompresion(MuelleLineal):
         max_radio = max(radio_exterior, radio_interior, 1.0)
         padding = max_radio * 0.25
 
-        ax2.add_patch(Circle((0, 0), radio_exterior, fill=False, lw=2, color='tab:green'))
+        ax2.add_patch(Circle((0, 0),
+                             radio_exterior,
+                             fill=False, lw=2,
+                             color='tab:green'))
         if radio_interior > 0:
-            ax2.add_patch(Circle((0, 0), radio_interior, fill=False, lw=2, color='tab:blue'))
+            ax2.add_patch(Circle((0, 0),
+                                 radio_interior,
+                                 fill=False,
+                                 lw=2,
+                                 color='tab:blue'))
 
-        ax2.plot([-radio_exterior, radio_exterior], [0, 0], color='tab:green', lw=1)
-        ax2.text(0, -padding, f"Dext = {diametro_exterior:.2f} mm", ha='center', va='top', fontsize=8)
+        ax2.plot([-radio_exterior, radio_exterior],
+                 [0, 0],
+                 color='tab:green',
+                 lw=1)
+        ax2.text(0,
+                 -padding,
+                 f"Dext = {diametro_exterior:.2f} mm",
+                 ha='center',
+                 va='top',
+                 fontsize=8)
 
         if radio_interior > 0:
-            ax2.plot([0, 0], [-radio_interior, radio_interior], color='tab:blue', lw=1)
-            ax2.text(0, padding, f"Dint = {diametro_interior:.2f} mm", ha='center', va='bottom', fontsize=8)
+            ax2.plot([0, 0],
+                     [-radio_interior, radio_interior],
+                     color='tab:blue',
+                     lw=1)
+            ax2.text(0,
+                     padding,
+                     f"Dint = {diametro_interior:.2f} mm",
+                     ha='center',
+                     va='bottom',
+                     fontsize=8)
 
         ax2.set_xlim(-max_radio - padding, max_radio + padding)
         ax2.set_ylim(-max_radio - padding, max_radio + padding)
@@ -299,9 +324,9 @@ class MuelleCompresion(MuelleLineal):
         return plot_data
 
     def create_goodman_diagram(self, show=False):
-        """Genera el diagrama de Goodman y devuelve un diccionario con la imagen en base64,
-        el análisis y las tensiones calculadas. Si falla, devuelve un diccionario con
-        las claves 'error' y 'traceback'."""
+        """Genera el diagrama de Goodman y devuelve un diccionario con la
+        imagen en base64, el análisis y las tensiones calculadas. Si falla,
+        devuelve un diccionario con las claves 'error' y 'traceback'."""
         try:
             # Obtener tensiones desde la tabla de posiciones
             sigma_max = self.get_tension_max()
@@ -315,12 +340,14 @@ class MuelleCompresion(MuelleLineal):
                 cycles=int(self.numero_ciclos)
             )
 
-            analyzer = GoodmanAnalyzer(goodman_data, shot_peening=self.shot_peening)
+            analyzer = GoodmanAnalyzer(goodman_data,
+                                       shot_peening=self.shot_peening)
             if show:
                 analyzer.plot_diagram(sigma_max=sigma_max, sigma_min=sigma_min)
                 return
             
-            image_b64 = analyzer.get_diagram_image(sigma_max=sigma_max, sigma_min=sigma_min)
+            image_b64 = analyzer.get_diagram_image(sigma_max=sigma_max,
+                                                   sigma_min=sigma_min)
 
             analisis = analyzer.get_analysis_summary(sigma_max, sigma_min)
 
@@ -338,22 +365,22 @@ class MuelleCompresion(MuelleLineal):
             tb = traceback.format_exc()
             print(f"Error creando diagrama de Goodman en MuelleLineal: {e}\n{tb}")
             return {'error': str(e), 'traceback': tb}
-    
-    def get_goodman_graph(self, goodman:Goodman, show=True):
+
+    def get_goodman_graph(self, goodman: Goodman, show=True):
         """Crea el diagrama de Goodman para el muelle"""
         # Placeholder implementation
         # Aquí se implementaría la lógica para crear el diagrama de Goodman
-        sigma_min = min(self.posiciones.posiciones, key=lambda x: x.tension).tension
-        sigma_max = max(self.posiciones.posiciones, key=lambda x: x.tension).tension
+        sigma_min = min(self.posiciones.posiciones,
+                        key=lambda x: x.tension).tension
+        sigma_max = max(self.posiciones.posiciones,
+                        key=lambda x: x.tension).tension
         if show:
             goodman.plot_goodman_graph(sigma_max, sigma_min)
         else:
             goodman_fig = goodman.get_goodman_graph(sigma_max, sigma_min)
-        
-
         return goodman_fig
-        
-    def get_goodman_analysis_summary(self, goodman:Goodman):
+
+    def get_goodman_analysis_summary(self, goodman: Goodman):
         """Retorna un resumen completo del análisis de Goodman"""
         sigma_min = self.get_tension_min()
         sigma_max = self.get_tension_max()
@@ -370,8 +397,7 @@ class MuelleCompresion(MuelleLineal):
     def get_carga_max(self):
         """Retorna la carga máxima del muelle"""
         return max(self.posiciones.posiciones, key=lambda x: x.carga).carga
-    
+
     def get_carga_min(self):
         """Retorna la carga mínima del muelle"""
         return min(self.posiciones.posiciones, key=lambda x: x.carga).carga
-

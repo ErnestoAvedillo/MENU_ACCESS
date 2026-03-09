@@ -12,3 +12,5 @@ dependencies = [
     "pytest>=9.0.2",
     "scikit-learn>=1.8.0",
 ]
+[tool.flake8]
+max-line-length =120

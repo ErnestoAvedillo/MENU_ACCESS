@@ -1,21 +1,22 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-import pandas as pd
-import os
-import json
-import base64
-import io
-import matplotlib
-matplotlib.use('Agg')  # Backend sin GUI para el servidor
 import matplotlib.pyplot as plt
 import numpy as np
+from django.shortcuts import render
 from muelles.lineal.compresion import MuelleCompresion
 from muelles.lineal.traccion import MuelleTraccion
 from muelles.pymodels.material import Material
 from muelles.lineal.goodman import GoodmanData, GoodmanAnalyzer
 import traceback
+# from django.http import HttpResponse
+import pandas as pd
+import os
+# import json
+import base64
+import io
+import matplotlib
+matplotlib.use('Agg')  # Backend sin GUI para el servidor
 
 # Create your views here.
+
 
 def get_available_materials():
     """Obtiene la lista de materiales disponibles desde materials.csv"""
@@ -23,16 +24,17 @@ def get_available_materials():
         current_dir = os.path.dirname(os.path.abspath(__file__))
         material_dir = os.path.join(current_dir, 'material')
         csv_path = os.path.join(material_dir, 'materials.csv')
-        
+
         df = pd.read_csv(csv_path)
-        df.columns = df.columns.str.strip()  # Limpiar espacios en nombres de columnas
-        
+        # Limpiar espacios en nombres de columnas
+        df.columns = df.columns.str.strip()
+
         materials = []
         for index, row in df.iterrows():
             denomination = str(row['denomination']).strip()
             # Usar la descripción del CSV, limpiando comillas si las hay
             description = str(row.get('descripcion', denomination)).strip().strip("'\"")
-            
+
             materials.append({
                 'code': denomination,
                 'name': description,

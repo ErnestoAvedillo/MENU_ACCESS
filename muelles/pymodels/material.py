@@ -27,6 +27,7 @@ def get_available_materials() -> List[str]:
         return df['denomination'].tolist()
     return []
 
+
 class Material(BaseModel):
     nombre_material: str
     young_modulus: Optional[float] = None

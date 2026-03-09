@@ -1,5 +1,6 @@
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel
 from typing import Optional, List
+
 
 class PosicionCarga(BaseModel):
     posicion: float
@@ -7,19 +8,27 @@ class PosicionCarga(BaseModel):
     carga: Optional[float] = None
     tension: Optional[float] = None
     diametro_externo: Optional[float] = None
+    diametro_interno: Optional[float] = None
+
 
 class PosicionesTable(BaseModel):
     posiciones: List[PosicionCarga] = []
 
-    def add_posicion_carga(self, posicion: float, recorrido: float, carga: Optional[float] = None,
-                           tension: Optional[float] = None, diametro_externo: Optional[float] = None):
+    def add_posicion_carga(self,
+                           posicion: float,
+                           recorrido: float,
+                           carga: Optional[float] = None,
+                           tension: Optional[float] = None,
+                           diametro_externo: Optional[float] = None,
+                           diametro_interno: Optional[float] = None):
         """Agrega una nueva posición con sus características a la tabla"""
         nueva_posicion = PosicionCarga(
             posicion=posicion,
             recorrido=recorrido,
             carga=carga,
             tension=tension,
-            diametro_externo=diametro_externo
+            diametro_externo=diametro_externo,
+            diametro_interno=diametro_interno
         )
         self.posiciones.append(nueva_posicion)
 

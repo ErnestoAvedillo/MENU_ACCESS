@@ -14,6 +14,8 @@ from scipy.optimize import curve_fit
 def model_func(x, A, B, C, D, E):
     return (A*x - B)/(C*x - D) + E/x
 
+def torsion_wahl_factor(x):
+    return (4*x**2 - x - 1)/(4 * x * (x - 1))
 
 # 1. Datos que forman una curva descendente
 file = "/home/eavedillo/Desktop/djmenu/muelles/regresiones/Wahl Factor Torsion/Wahl factor vs index.csv"
@@ -96,6 +98,18 @@ y_fit = np.exp(model_func(X.ravel(), *popt))
 # Calcular R² (coeficiente de determinación) como medida de precisión
 r2 = r2_score(y.ravel(), y_fit)
 
+plt.scatter(X.ravel(), y.ravel(), color='blue', label='Datos reales')
+plt.plot(X, y_fit, color='green', label=f'Regresión Polinomial (R² = {r2:.4f})')
+plt.title('Ajuste de Curva Descendente')
+plt.xlabel('log(Sut)')
+plt.ylabel('factor f')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
+
+
+y_fit = torsion_wahl_factor(X.ravel())
+r2 = r2_score(y.ravel(), y_fit)
 plt.scatter(X.ravel(), y.ravel(), color='blue', label='Datos reales')
 plt.plot(X, y_fit, color='green', label=f'Regresión Polinomial (R² = {r2:.4f})')
 plt.title('Ajuste de Curva Descendente')
