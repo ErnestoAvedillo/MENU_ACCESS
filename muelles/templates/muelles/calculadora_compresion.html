@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'muelles/css/estiloss.css' %}">
     <link rel="stylesheet" href="{% static 'muelles/css/calculadora-muelles.css' %}">
     <link rel="stylesheet" href="{% static 'muelles/css/muelle-extensions.css' %}">
+    <link rel="stylesheet" href="{% static 'muelles/css/form_muelles_compresion.css' %}">
 </head>
 <body>
     <div class="calculadora-container">
@@ -17,14 +18,14 @@
         <p>Incluye selección automática de materiales, cálculo de tolerancias, y análisis completo de propiedades mecánicas según normativas técnicas.</p>
         <form method="post">
             {% csrf_token %}
-            <div class="form-grid">
-                <div class="image-preview"> 
-                    <img class="preview-img" src="{% static 'muelles/img/sketch_muelle_compresion.jpg' %}" alt="Diagrama muelle compresión"> 
+            <div class="form-grid compression-form-grid">
+                <div class="compression-sidebar-left">
+                    {% include 'muelles/partials/_material_form.html' %}
                 </div>
-                {% include 'muelles/partials/_material_form.html'%}
-                {% include 'muelles/partials/_geometria_form.html' %}
-                {% include 'muelles/partials/_extremos_compresion.html' %}
-                {% include 'muelles/partials/_carga_form.html' %}
+                {% include 'muelles/partials/_formulario_compresion.html' %}
+                <div class="compression-sidebar-right">
+                    {% include 'muelles/partials/_extremos_compresion.html' %}
+                </div>
             </div>
         </form>
         {% include 'muelles/partials/_calculadora_results.html' %}

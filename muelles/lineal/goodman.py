@@ -1,11 +1,13 @@
 import matplotlib.pyplot as plt
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, field_validator
 from ..pymodels.wire_characteristics import WireCharacteristics
 from ..pymodels.material import Material
 from muelles.regresiones.factor_f.usar_modelo_factor_f import ModeloFactorF
 from math import log10
 import io
 import base64
+from pint import Quantity
+from ..pymodels.units import ureg
 
 class GoodmanData(BaseModel):
     """Modelo de datos para el diagrama de Goodman - solo validación y datos"""
@@ -13,6 +15,15 @@ class GoodmanData(BaseModel):
     diameter: float
     carga: str = "axial"
     cycles: int = 1e6  # Número de ciclos para el análisis de fatiga, por defecto 1 millón
+
+    @field_validator('diameter', mode='before')
+    @classmethod
+    def validate_diameter(cls, v):
+        if isinstance(v, Quantity):
+            return float(v.to('mm').magnitude)
+        if isinstance(v, (int, float)):
+            return float(v)
+        return float(ureg(v).to('mm').magnitude)
 
     @computed_field
     @property
@@ -88,6 +99,12 @@ class GoodmanAnalyzer:
         # Límite de fatiga al cortante corregido (Ssf)
         self.Ssf = self.k_a * self.k_b * self.k_c * self.k_d * self.k_e * self.Ssf_prime
 
+    @staticmethod
+    def _to_mpa_float(value) -> float:
+        if isinstance(value, Quantity):
+            return float(value.to('MPa').magnitude)
+        return float(value)
+
     def plot_diagram(self, sigma_max: float, sigma_min: float, show_plot: bool = True):
         """
         Grafica el diagrama de Goodman con el punto de operación marcado
@@ -100,6 +117,9 @@ class GoodmanAnalyzer:
         Returns:
             Figure de matplotlib para mayor flexibilidad
         """
+        sigma_max = self._to_mpa_float(sigma_max)
+        sigma_min = self._to_mpa_float(sigma_min)
+
         fig, ax = plt.subplots(figsize=(10, 8))
         
         # Coordenadas del diagrama de Goodman
@@ -172,6 +192,9 @@ class GoodmanAnalyzer:
         Returns:
             Factor de seguridad
         """
+        sigma_max = self._to_mpa_float(sigma_max)
+        sigma_min = self._to_mpa_float(sigma_min)
+
         mean_tension = (sigma_max + sigma_min) / 2
         amplitude = (sigma_max - sigma_min) / 2
         
@@ -189,6 +212,9 @@ class GoodmanAnalyzer:
         Returns:
             Diccionario con todos los parámetros calculados
         """
+        sigma_max = self._to_mpa_float(sigma_max)
+        sigma_min = self._to_mpa_float(sigma_min)
+
         return {
             'material': self.data.material.nombre_material,
             'diameter': self.data.diameter,
@@ -221,7 +247,7 @@ class Goodman(GoodmanAnalyzer):
     """Clase de retrocompatibilidad - usa la nueva arquitectura internamente"""
     
     def __init__(self, material: Material, diameter: float, carga: str = "axial", numero_ciclos: int = 1e6, shot_peening: bool = False):
-        data = GoodmanData(material=material, diameter=diameter, carga=carga, numero_ciclos=numero_ciclos)
+        data = GoodmanData(material=material, diameter=diameter, carga=carga, cycles=numero_ciclos)
         super().__init__(data, shot_peening=shot_peening)
     
     def plot_goodman_graph(self, sigma_max: float, sigma_min: float):

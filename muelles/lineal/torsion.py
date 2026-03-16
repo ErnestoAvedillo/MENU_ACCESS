@@ -1,39 +1,179 @@
 """Cálculo de muelles de torsión."""
 from math import pi
+import numpy as np
 from math import sqrt, atan
 from muelles.pymodels.material import Material
 from muelles.pymodels.wire_characteristics import WireCharacteristics
 from typing import Optional
-from muelles.pymodels.posiciones import PosicionesTable
+from muelles.pymodels.posiciones import PosicionesTableAngular
+from pint import Quantity
+from muelles.pymodels.units import ureg
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+
+def _mag(v):
+    """Extract the magnitude from a Quantity, or return the value as-is."""
+    return v.magnitude if isinstance(v, Quantity) else v
 
 
 class MuelleTorsion(WireCharacteristics):
-    diametro_medio: float = 0.0  # en mm
-    diametro_interior: float = 0.0  # en mm
-    diametro_exterior: float = 0.0  # en mm
-    angulo_libre: float = 0.0  # en grados
-    angulo_tangencias: float = 0.0  # en grados
-    pitch: float = 0.0  # en mm
+    model_config = ConfigDict(arbitrary_types_allowed=True,
+                              validate_assignment=True)
+    diametro_medio: Quantity = 0.0 * ureg.mm
+    diametro_interior: Quantity = 0.0 * ureg.mm
+    diametro_exterior: Quantity = 0.0 * ureg.mm
+    angulo_libre: Quantity = 0.0 * ureg.degree
+    angulo_tangencias: Quantity = 0.0 * ureg.degree
+    angle_travel: Quantity = 0.0 * ureg.degree
+    angle_position: Quantity = 0.0 * ureg.degree
+    torque_position: Quantity = 0.0 * ureg.N * ureg.mm
+    tension_position: Quantity = 0.0 * ureg.MPa
+    pitch: Quantity = 0.0 * ureg.mm
     shot_peening: bool = False
     # Número de ciclos para análisis de fatiga, por defecto 1 millón
     numero_ciclos: int = 1e6  
     numero_espiras_utiles: float = 0.0
     numero_espiras: int = 0
-    ancho_muelle: float = 0.0  # en mm
-    radious_leg_fija: float = 0.0  # en mm
-    long_leg_fija: float = 0.0  # en mm
-    radious_leg_movil: float = 0.0  # en mm
-    long_leg_movil: float = 0.0  # en mm
+    ancho_muelle: Quantity = 0.0 * ureg.mm  # en mm
+    radious_leg_fija: Quantity = 0.0 * ureg.mm  # en mm
+    long_leg_fija: Quantity = 0.0 * ureg.mm  # en mm
+    radious_leg_movil: Quantity = 0.0 * ureg.mm  # en mm
+    long_leg_movil: Quantity = 0.0 * ureg.mm  # en mm
     indice_muelle: float = 0.0  # factor_wahl: float = 0.0  # factor de Wahl
     factor_wahl_category: Optional[str] = None  # categoría del factor de Wahl
     factor_wahl_eval: Optional[float] = None  # factor de Wahl evaluado
     factor_wahl: float = 0.0  # factor de Wahl
-    longitud_hilo_total: float = 0.0  # en mm
-    longitud_hilo_cuerpo: float = 0.0  # en mm
-    constante_muelle: float = 0.0  # en Nmm/rad
-    momento_resistente: float = 0.0  # en Nmm
+    longitud_hilo_total: Quantity = 0.0 * ureg.mm  # en mm
+    longitud_hilo_cuerpo: Quantity = 0.0 * ureg.mm  # en mm
+    constante_muelle: Quantity = 0.0 * ureg.N * ureg.mm / ureg.rad  # en Nmm/rad
+    momento_resistente: Quantity = 0.0 * ureg.mm * ureg.mm * ureg.mm * ureg.mm  # en Nmm
     # Lista de posiciones para análisis de fatiga
-    positions: PosicionesTable = PosicionesTable()
+    positions: PosicionesTableAngular = PosicionesTableAngular()
+
+    @field_validator('diametro_medio',
+                     'diametro_exterior',
+                     'diametro_interior',
+                     'pitch',
+                     'ancho_muelle',
+                     'radious_leg_fija',
+                     'long_leg_fija',
+                     'radious_leg_movil',
+                     'long_leg_movil',
+                     'longitud_hilo_total',
+                     'longitud_hilo_cuerpo',
+                     mode='before')
+    @classmethod
+    def validate_positive_quantities(cls, v):
+        """Valida que las cantidades sean positivas y tengan unidades correctas"""
+        if v is not None:
+            try:
+                if isinstance(v, Quantity):
+                    quantity = v.to('mm')
+                elif isinstance(v, (int, float)):
+                    quantity = v * ureg.mm
+                else:
+                    quantity = ureg(v).to('mm')
+                if quantity.magnitude < 0:
+                    raise ValueError(f'{quantity} debe ser un valor positivo con unidades válidas.')
+                return quantity
+            except Exception as e:
+                raise ValueError(f'Error al validar cantidad: {e}')
+        return quantity
+
+    @field_validator('angulo_libre', 'angulo_tangencias', 'angle_position', 'angle_travel', mode='before')
+    @classmethod
+    def validate_positive_angles(cls, v):
+        """Valida que los ángulos sean positivos y tengan unidades correctas"""
+        if v is not None:
+            try:
+                if isinstance(v, Quantity):
+                    quantity = v.to('degree')
+                elif isinstance(v, (int, float)):
+                    quantity = v * ureg.degree
+                else:
+                    quantity = ureg(v).to('degree')
+                if quantity.magnitude < 0:
+                    quantity =  360 * ureg.degree + quantity
+                return quantity
+            except Exception as e:
+                raise ValueError(f'Error al validar ángulo: {e}')
+        return quantity
+    
+    @field_validator('constante_muelle',mode='before')
+    @classmethod
+    def validate_positive_spring_constant(cls, v):
+        """Valida que la constante del muelle sea positiva"""
+        if v is not None:
+            try:
+                if isinstance(v, Quantity):
+                    quantity = v.to('N*mm/rad')
+                elif isinstance(v, (int, float)):
+                    quantity = v * ureg('N*mm/rad')
+                else:
+                    quantity = ureg(v).to('N*mm/rad')
+                if quantity.magnitude <= 0:
+                    raise ValueError(f'{v} debe ser un valor positivo')
+                return quantity
+            except Exception as e:
+                raise ValueError(f'Error al validar constante del muelle: {e}')
+        return quantity
+
+    @field_validator('momento_resistente', mode='before')
+    @classmethod
+    def validate_positive_sptring_constant(cls,v):
+        """Valida el momento resistente"""
+        if v is not None:
+            try:
+                if isinstance(v, Quantity):
+                    quantity = v.to('mm**4')
+                elif isinstance(v, (int, float)):
+                    quantity = v * ureg('mm**4')
+                else:
+                    quantity = ureg(v).to('mm**4')
+                if quantity.magnitude <= 0:
+                    raise ValueError(f'{v} debe ser un valor positivo')
+                return quantity
+            except Exception as e:
+                raise ValueError(f'Error al validar momento resistente: {e}')
+        return quantity
+    
+    @field_validator('torque_position', mode='before')
+    @classmethod
+    def validate_torque_position(cls, v):
+        """Valida la posición de torque"""
+        if v is not None:
+            try:
+                if isinstance(v, Quantity):
+                    quantity = v.to('N*mm')
+                elif isinstance(v, (int, float)):
+                    quantity = v * ureg('N*mm')
+                else:
+                    quantity = ureg(v).to('N*mm')
+                if quantity.magnitude < 0:
+                    raise ValueError(f'{v} debe ser un valor positivo')
+                return quantity
+            except Exception as e:
+                raise ValueError(f'Error al validar posición de torque: {e}')
+        return quantity
+    
+    @field_validator('tension_position', mode='before')
+    @classmethod
+    def validate_tension_position(cls, v):
+        """Valida la posición de tensión"""
+        if v is not None:
+            try:
+                if isinstance(v, Quantity):
+                    quantity = v.to('MPa')
+                elif isinstance(v, (int, float)):
+                    quantity = v * ureg('MPa')
+                else:
+                    quantity = ureg(v).to('MPa')
+                if quantity.magnitude < 0:
+                    raise ValueError(f'{v} debe ser un valor positivo')
+                return quantity
+            except Exception as e:
+                raise ValueError(f'Error al validar posición de tensión: {e}')
+        return quantity
 
     def __init__(self, material: Material, wire_diameter: float, **data):
         data.update({
@@ -43,42 +183,39 @@ class MuelleTorsion(WireCharacteristics):
         super().__init__(**data)
         self.numero_ciclos = 1e6  # Valor por defecto de 1 millón de ciclos
         self.shot_peening = False  # Valor por defecto sin shot peening
-        self.diametro_medio = 0.0  # en mm
-        self.pitch = 0.0  # en mm
         self.numero_espiras_utiles = 0.0
         self.numero_espiras = 0
-        self.ancho_muelle = 0.0  # en mm
-        self.radious_leg_fija = 0.0  # en mm
-        self.long_leg_fija = 0.0  # en mm
-        self.radious_leg_movil = 0.0  # en mm
-        self.long_leg_movil = 0.0  # en mm
         self.indice_muelle = 0.0  # factor_wahl: float = 0.0  # factor de Wahl
         self.factor_wahl_category = None  # categoría del factor de Wahl
         self.factor_wahl_eval = None  # factor de Wahl evaluado
         self.factor_wahl = 0.0  # factor de Wahl
-        self.longitud_hilo_total = 0.0  # en mm
-        self.longitud_hilo_cuerpo = 0.0  # en mm
-        self.constante_muelle = 0.0  # en Nmm/rad
-        self.momento_resistente = 0.0  # en Nmm
         # Lista de posiciones para análisis de fatiga
-        self.positions = PosicionesTable()
-
-    def calculate_spring_properties(self,
-                                    diametro_medio: float,
-                                    numero_espiras: int,
-                                    pitch: float,
-                                    angulo_libre: float,
-                                    radious_leg_fija: float,
-                                    radious_leg_movil: float
-                                    ):
-        """Calcula todas las propiedades del muelle de torsión basándose en los parámetros proporcionados"""
+        self.positions = PosicionesTableAngular()
+    
+    def configure_spring(self,
+                         diametro_medio: float,
+                         numero_espiras: int,
+                         pitch: float,
+                         angulo_libre: float,
+                         radious_leg_fija: float,
+                         radious_leg_movil: float):
+        """Configura el muelle de torsión con los parámetros proporcionados"""
         self.set_diametro_medio(diametro_medio)
-        self.set_ancho_muelle(numero_espiras, pitch, angulo_libre)
-        self.set_angulo_tangencias(angulo_libre, radious_leg_fija, radious_leg_movil)
-        self.set_longitud_hilo(numero_espiras, pitch, angulo_libre, radious_leg_fija, radious_leg_movil)
+        self.set_numero_espiras(numero_espiras)
+        self.set_pitch(pitch)
+        self.set_angulo_libre(angulo_libre)
+        self.set_radious_leg_fija(radious_leg_fija)
+        self.set_radious_leg_movil(radious_leg_movil)
+        return self.calculate_spring_properties()
+
+    def calculate_spring_properties(self):
+        """Calcula todas las propiedades del muelle de torsión basándose en los parámetros proporcionados"""
+        self.set_angulo_tangencias(self.angulo_libre, self.radious_leg_fija, self.radious_leg_movil)
+        self.set_ancho_muelle(self.numero_espiras, self.pitch, self.angulo_libre)
+        self.set_longitud_hilo(self.numero_espiras, self.pitch, self.angulo_tangencias, self.radious_leg_fija, self.radious_leg_movil)
         self.calcular_indice_muelle()
         self.calcular_factor_de_wahl()
-        self.calculate_length_legs(radious_leg_fija, radious_leg_movil)
+        self.calculate_length_legs(self.radious_leg_fija, self.radious_leg_movil)
         self.set_momento_resistente()
         self.calcula_constante_muelle()
         return self.get_spring_properties()
@@ -98,7 +235,44 @@ class MuelleTorsion(WireCharacteristics):
         if diametro_medio <= 0:
             raise ValueError("El diámetro medio debe ser un valor positivo")
         self.diametro_medio = diametro_medio
+        self.diametro_interior = self.diametro_medio - self.diametero_hilo
+        self.diametro_exterior = self.diametro_medio + self.diametero_hilo
         return
+
+    def set_numero_espiras(self, numero_espiras):
+        """Establece el número de espiras del muelle de torsión"""
+        if numero_espiras <= 0:
+            raise ValueError("El número de espiras debe ser un valor positivo")
+        self.numero_espiras = numero_espiras
+        return self.numero_espiras
+    
+    def set_pitch(self, pitch):
+        """Establece el pitch del muelle de torsión"""
+        self.pitch = pitch
+        if self.pitch <= self.diametero_hilo:
+            raise ValueError("El pitch debe ser un valor positivo")
+        return self.pitch
+    
+    def set_angulo_libre(self, angulo_libre):
+        """Establece el ángulo libre del muelle de torsión"""
+        if angulo_libre < 0:
+            angulo_libre = 360 + angulo_libre
+        self.angulo_libre = angulo_libre
+        return self.angulo_libre
+
+    def set_radious_leg_fija(self, radious_leg_fija):
+        """Establece el radio de la pata fija del muelle de torsión"""
+        self.radious_leg_fija = radious_leg_fija
+        if self.radious_leg_fija < self.diametro_medio / 2:
+            raise ValueError("El radio de la pata fija debe ser al menos la mitad del diámetro medio")
+        return self.radious_leg_fija
+
+    def set_radious_leg_movil(self, radious_leg_movil):
+        """Establece el radio de la pata móvil del muelle de torsión"""
+        self.radious_leg_movil = radious_leg_movil
+        if self.radious_leg_movil < self.diametro_medio / 2:
+            raise ValueError("El radio de la pata móvil debe ser al menos la mitad del diámetro medio")
+        return self.radious_leg_movil
 
     def calcular_indice_muelle(self):
         """Calcula el índice del muelle de torsión"""
@@ -132,45 +306,45 @@ class MuelleTorsion(WireCharacteristics):
             raise ValueError("""Debe proporcionar número de espiras útiles,
                              pitch y ángulo libre para establecer el ancho del
                              muelle""")
-        self.pitch = pitch
         self.angulo_libre = angulo_libre
-        self.ancho_muelle = (numero_espiras + angulo_libre / 360) * pitch
-        self.numero_espiras_utiles = (numero_espiras +
-                                      angulo_libre / 360 )
+        self.pitch = pitch
+        self.ancho_muelle = (self.numero_espiras + self.angulo_libre / 2 / pi) * self.pitch
+        self.numero_espiras_utiles = (self.numero_espiras +
+                                      self.angulo_libre / 2 / pi)
 
         return self.ancho_muelle
 
     def set_longitud_hilo(self,
                           numero_espiras: int,
                           pitch: float,
-                          angulo_libre: float,
+                          angulo_tangencias: float,
                           radious_leg_fija: float,
                           radious_leg_movil: float):
         """Calcula la longitud del hilo del muelle de torsión"""
         parameters_provided = [numero_espiras,
                                pitch,
-                               angulo_libre,
+                               angulo_tangencias,
                                radious_leg_fija,
                                radious_leg_movil]
         if sum(1 for var in parameters_provided if var is None) > 0:
             raise ValueError("""Debe proporcionar número de espiras útiles,
                              pitch, ángulo libre, y radios de las patas para
                              calcular la longitud del hilo""")
-        if self.diametro_medio <= 0:
+        if _mag(self.diametro_medio) <= 0:
             raise ValueError("""El diámetro medio debe ser un valor positivo
                              para calcular la longitud del hilo""")
         self.numero_espiras = numero_espiras
         self.pitch = pitch
-        self.angulo_libre = angulo_libre
+        self.angulo_tangencias = angulo_tangencias
         self.radious_leg_fija = radious_leg_fija
         self.radious_leg_movil = radious_leg_movil
-        longitud_una_vuelta = sqrt((pi * self.diametro_medio) ** 2 +
-                                   (pitch / (2 * pi)) ** 2) 
-        self.longitud_hilo_cuerpo = ((numero_espiras + angulo_libre / 2 / pi) *
+        longitud_una_vuelta = np.sqrt((pi * self.diametro_medio) ** 2 +
+                                   (self.pitch / (2 * pi)) ** 2) 
+        self.longitud_hilo_cuerpo = ((self.numero_espiras + self.angulo_tangencias / 2 / pi) *
                                      longitud_una_vuelta)
-        self.calculate_length_legs(radious_leg_fija, radious_leg_movil)
+        self.calculate_length_legs(self.radious_leg_fija, self.radious_leg_movil)
         self.longitud_hilo_total = (self.longitud_hilo_cuerpo +
-                                    (self.long_leg_fija + self.long_leg_fija))
+                                    self.long_leg_fija + self.long_leg_movil)
         return self.longitud_hilo_total
 
     def set_angulo_tangencias(self,
@@ -184,16 +358,16 @@ class MuelleTorsion(WireCharacteristics):
         if sum(1 for var in parameters_provided if var is None) > 0:
             raise ValueError("""Debe proporcionar ángulo libre y radios de las
                              patas para calcular el ángulo de tangencias""")
-        angulo_cero_equivalente = (2 * pi -
-                                   atan(radious_leg_fija / self.diametro_medio) -
-                                   atan(radious_leg_movil / self.diametro_medio))
         self.angulo_libre = angulo_libre
         self.radious_leg_fija = radious_leg_fija
         self.radious_leg_movil = radious_leg_movil
-        if angulo_cero_equivalente >= angulo_libre:
-            self.angulo_tangencias = angulo_cero_equivalente - angulo_libre
+        angulo_cero_equivalente = (2 * pi -
+                                   atan(self.radious_leg_fija / self.diametro_medio) -
+                                   atan(self.radious_leg_movil / self.diametro_medio))
+        if self.angulo_libre + angulo_cero_equivalente > 2 * pi:
+            self.angulo_tangencias = angulo_cero_equivalente + self.angulo_libre - 2 * pi
         else:
-            self.angulo_tangencias = 360 - (angulo_cero_equivalente - angulo_libre)
+            self.angulo_tangencias = 2 * pi - angulo_cero_equivalente - self.angulo_libre
         self.numero_espiras_utiles = self.numero_espiras + self.angulo_tangencias / 2 / pi
         return self.angulo_tangencias
 
@@ -201,19 +375,14 @@ class MuelleTorsion(WireCharacteristics):
                               radious_leg_fija=None,
                               radious_leg_movil=None):
         """Calcula la longitud de las patas del muelle de torsión"""
-        if radious_leg_fija is None :
-            self.radious_leg_fija = self.diametro_medio / 2
-        if radious_leg_movil is None:
-
-            self.radious_leg_movil = self.diametro_medio / 2
-        if radious_leg_fija < self.diametro_medio / 2:
-            self.radious_leg_fija = self.diametro_medio / 2
-        if radious_leg_movil < self.diametro_medio / 2:
-            self.radious_leg_movil = self.diametro_medio / 2
         self.radious_leg_fija = radious_leg_fija
         self.radious_leg_movil = radious_leg_movil
-        self.long_leg_fija = sqrt(self.diametro_medio**2 / 4 + radious_leg_fija**2)
-        self.long_leg_movil = sqrt(self.diametro_medio**2 / 4 + radious_leg_movil**2)
+        if self.radious_leg_fija is None or self.radious_leg_fija < self.diametro_medio / 2:
+            self.radious_leg_fija = self.diametro_medio / 2
+        if self.radious_leg_movil is None or self.radious_leg_movil < self.diametro_medio / 2:
+            self.radious_leg_movil = self.diametro_medio / 2
+        self.long_leg_fija = np.sqrt(self.diametro_medio**2 / 4 + self.radious_leg_fija**2)
+        self.long_leg_movil = np.sqrt(self.diametro_medio**2 / 4 + self.radious_leg_movil**2)
         return self.long_leg_fija, self.long_leg_movil
 
     def set_numero_ciclos(self, numero_ciclos):
@@ -228,7 +397,7 @@ class MuelleTorsion(WireCharacteristics):
 
     def calcula_constante_muelle(self):
         """Calcula la constante del muelle de torsión"""
-        if self.momento_resistente <= 0:
+        if _mag(self.momento_resistente) <= 0:
             self.set_momento_resistente()
         self.constante_muelle = (self.material.young_modulus *
                                  self.momento_resistente /
@@ -238,51 +407,60 @@ class MuelleTorsion(WireCharacteristics):
     def calcular_torque(self, angulo_giro):
         """Calcula el torque aplicado al muelle de torsión para un ángulo de
         giro dado en grados"""
-        if angulo_giro <= 0:
+        if _mag(angulo_giro) <= 0:
             raise ValueError("El ángulo de giro debe ser un valor positivo")
-        # Convertir ángulo a radianes
-        torque = self.constante_muelle * (angulo_giro * pi / 180)
-        return torque
+        self.angulo_giro = angulo_giro
+        self.torque_position = self.constante_muelle * self.angulo_giro
+        return self.torque_position
 
     def set_momento_resistente(self):
         """Calcula el momento resistente del muelle de torsión para un torque
         máximo dado"""
-        self.momento_resistente = pi * pow(self.diametro_medio, 4) / 64
+        self.momento_resistente = pi * np.pow(self.diametro_medio, 4) / 64
         return self.momento_resistente
 
     def calcular_tension(self, torque):
         """Calcula la tensión máxima en el muelle de torsión para un torque
         dado"""
-        if torque <= 0:
+        if _mag(torque) <= 0:
             raise ValueError("El torque debe ser un valor positivo para \
             calcular la tensión")
         tension = ((32 * torque * self.factor_wahl) /
-                   (pi * pow(self.diametro_medio, 3)))
+                   (pi * np.pow(self.diametro_medio, 3)))
         return tension
 
-    def add_position(self, angle=None, torque=None):
-        """Agrega una posición de ángulo y torque para análisis de fatiga"""
-        if angle is None and torque is None:
+    def add_position(self, angle_travel=None, torque=None):
+        """Agrega una posición usando un ángulo recorrido o torque para análisis de fatiga"""
+        if angle_travel is None and torque is None:
             raise ValueError("Debe proporcionar un ángulo o un torque solo")
-        if angle is not None and torque is not None:
+        if angle_travel is not None and torque is not None:
             raise ValueError("Debe proporcionar solo un ángulo o un torque")
-        if angle is not None and angle <= 0:
+        if angle_travel is not None and angle_travel <= 0:
             raise ValueError("El ángulo debe ser un valor positivo")
         if torque is not None and torque <= 0:
             raise ValueError("El torque debe ser un valor positivo")
         if self.constante_muelle <= 0:
             self.calcula_constante_muelle()
-        if angle is not None:
-            # Convertir ángulo a radianes
-            torque = self.constante_muelle * (angle * pi / 180)  
-            tension = self.calcular_tension(torque)
+        if angle_travel is not None:
+            self.angle_travel = angle_travel
+            self.torque_position = self.constante_muelle * self.angle_travel
+            self.tension_position = self.calcular_tension(self.torque_position)
         else:
-            # Convertir torque a ángulo en grados
-            angle = (torque / self.constante_muelle) * (180 / pi)
-            tension = self.calcular_tension(torque)
+            self.torque_position = torque
+            self.angle_travel = self.torque_position / self.constante_muelle
+            self.tension_position = self.calcular_tension(self.angle_travel)
+        self.angle_position = self.angulo_libre - self.angle_travel
+        nuevo_angulo_tangencias = self.angulo_tangencias + self.angle_travel
+        nuevo_diametro_medio = (4 * (self.longitud_hilo_cuerpo ** 2 - self.pitch ** 2) / 
+                                (2 * pi * self.numero_espiras + nuevo_angulo_tangencias) ** 2) ** 0.5
+        diametro_exterior = nuevo_diametro_medio + self.diametero_hilo
+        diametro_interior = nuevo_diametro_medio - self.diametero_hilo
         if not hasattr(self, 'positions'):
-            self.positions = PosicionesTable()
-        self.positions.add_posicion_carga(angle, torque, tension, self.diametro_exterior, self.diametro_interior)
+            self.positions = PosicionesTableAngular()
+        self.positions.add_posicion_carga(self.angle_position,
+                                          self.angle_travel,
+                                          self.torque_position,
+                                          self.tension_position, diametro_exterior, diametro_interior)
         return self.positions
 
     def clean_positions(self):
@@ -295,14 +473,14 @@ class MuelleTorsion(WireCharacteristics):
         """Obtiene la lista de posiciones para análisis de fatiga"""
         return self.positions.posiciones
     
-    def get_spring_properties(self):
+    def get_spring_properties(self)-> dict:
         """Obtiene un diccionario con todas las propiedades del muelle de torsión"""
         return {
             'diametro_medio': self.diametro_medio,
             'diametro_interior': self.diametro_interior,
             'diametro_exterior': self.diametro_exterior,
-            'angulo_libre': self.angulo_libre,
-            'angulo_tangencias': self.angulo_tangencias,
+            'angulo_libre': self.angulo_libre,  # Convertir a grados para la salida
+            'angulo_tangencias': self.angulo_tangencias,  # Convertir a grados para la salida
             'pitch': self.pitch,
             'shot_peening': self.shot_peening,
             'numero_ciclos': self.numero_ciclos,

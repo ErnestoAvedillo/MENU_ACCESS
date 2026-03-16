@@ -7,7 +7,7 @@ material = Material(nombre_material="SL")
 # Crear muelle con la clase correcta
 muelle = MuelleCompresion(material=material, diametro_hilo=2.5)
 # Configurar propiedades del muelle (usando nombres correctos de métodos)
-muelle.diametro_medio = muelle.calcular_diametro_medio(diametro_exterior=30, diametro_interior=None)
+muelle.validate_diameters(diametro_exterior=30)
 print(f"✅ Test básico de MuelleCompresion")
  
 muelle.calculate_spring_properties(numero_espiras=None, pitch=20, longitud_libre=100)

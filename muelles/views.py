@@ -307,10 +307,17 @@ def calculadora_traccion(request):
                 except:
                     pass
             resultado = {'error': f'Error en los cálculos: {str(e)}', 'traceback': tb}
-        return render(request, 'muelles/calculadora_traccion.html', {
+    return render(request, 'muelles/calculadora_traccion.html', {
             'resultado': resultado,
             'materiales': materials,
         })
+
+def calculadora_torsion(request):
+    """Vista de la calculadora de muelles de torsión"""
+    # Esta vista se puede implementar de manera similar a las otras, adaptando el formulario y los cálculos para muelles de torsión
+    return render(request, 'muelles/calculadora_torsion.html', {
+        'materiales': get_available_materials(),
+    })
 
 def get_data_spring(request):
     datos_muelle = {

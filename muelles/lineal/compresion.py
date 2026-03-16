@@ -1,8 +1,8 @@
-from math import sqrt, pi
+from math import pi
+from pydantic import field_validator, model_validator, ConfigDict
 from .constants import WAHL_FACTOR_CONSTANTS, TIPOS_FINAL_MUELLE_COMPRESION
 from ..pymodels.wire_characteristics import WireCharacteristics
 from ..pymodels.material import Material
-from ..pymodels.posiciones import PosicionesTable
 from .goodman import Goodman
 import traceback
 from typing import List, Optional
@@ -14,16 +14,37 @@ import base64
 import numpy as np
 from .goodman import GoodmanData, GoodmanAnalyzer
 from .lineal import MuelleLineal
+from pint import Quantity
+from ..pymodels.units import ureg
+from ..pymodels.posiciones import PosicionesTableLineal
 """Clase para el cálculo de un muelle de compresión"""
 
 
 class MuelleCompresion(MuelleLineal):
     # Campos adicionales de MuelleCompresion
+    model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
     tipo_final: str = TIPOS_FINAL_MUELLE_COMPRESION[1]  # por defecto rectificado
-    longitud_hilo: Optional[float] = None  # en mm
+    longitud_hilo: Optional[Quantity] = 0.0 * ureg.mm # en mm
     numero_espiras: Optional[float] = None
-    longitud_bloqueo: float = 0.0  # Longitud con carga máxima en mm
+    longitud_bloqueo: Quantity = 0.0 * ureg.mm  # Longitud con carga máxima en mm
+    posiciones: PosicionesTableLineal = PosicionesTableLineal()
 
+    @field_validator('longitud_hilo', "longitud_bloqueo", mode='before')
+    @classmethod
+    def validate_quantities(cls, value):
+        if isinstance(value, str):
+            try:
+                quantity = ureg(value)
+                return quantity.to('mm')
+            except Exception as e:
+                raise ValueError(f"Error al convertir '{value}' a Quantity: {e}")
+        elif isinstance(value, (int, float)):
+            return Quantity(value, 'mm')
+        elif isinstance(value, Quantity):
+            return value.to('mm')
+        else:
+            raise ValueError(f"Valor no válido para Quantity: {value}")
+        
     def __init__(self, material, diametro_hilo: float, **data):
         """inicializo las variables del muelle a 0"""
         # Inicializar con valores por defecto
@@ -32,45 +53,46 @@ class MuelleCompresion(MuelleLineal):
     def set_material(self, material, diametro_hilo):
         return super().set_material(material, diametro_hilo)
     
-    def validate_diameters(self, diametro_exterior=None, diametro_interior=None, diametro_medio=None):
-        numero_variables = sum(1 for var in [diametro_exterior, diametro_interior, diametro_medio] if var is not None) 
-        if numero_variables != 1:
-            raise ValueError("Debe proporcionar exactamente una de las siguientes variables: diametro_exterior, diametro_interior, diametro_medio")
-        if diametro_medio is not None:
-            self.set_diametro_medio(diametro_medio)
-        else:
-            self.calcular_diametro_medio(diametro_exterior=diametro_exterior, diametro_interior=diametro_interior)
-        return True
-    
-    def calculate_spring_properties(self,numero_espiras:float=None, pitch:float=None, longitud_libre:float=None):
+    def calculate_spring_properties(self,
+                                    numero_espiras:float=None,
+                                    pitch:float=None,
+                                    longitud_libre:float=None):
         """Tercera parte: Calcula todas las propiedades del muelle"""
-        self.numero_espiras = numero_espiras
-        if pitch is not None and pitch <= self.diametero_hilo:
+        parameters_provided = sum(1 for var in [numero_espiras, pitch, longitud_libre] if var is not None)
+        if parameters_provided != 2:
+            raise ValueError("Debe proporcionar exactamente dos de las siguientes variables: numero_espiras, pitch, longitud_libre")
+
+        if numero_espiras is not None and pitch is not None:
+            self.numero_espiras = numero_espiras
+            self.pitch = pitch
+            self.longitud_libre = self.numero_espiras * self.pitch
+        elif numero_espiras is not None and longitud_libre is not None:
+            self.numero_espiras = numero_espiras
+            self.longitud_libre = longitud_libre
+            self.pitch = self.longitud_libre / self.numero_espiras
+        elif pitch is not None and longitud_libre is not None:
+            self.pitch = pitch
+            self.longitud_libre = longitud_libre
+            self.numero_espiras = self.longitud_libre / self.pitch
+        else:
+            raise ValueError("Debe proporcionar exactamente dos de las siguientes variables: numero_espiras, pitch, longitud_libre")
+
+        if self.pitch <= self.diametero_hilo:
             raise ValueError("El pitch debe ser mayor que el diámetro del hilo para evitar interferencias entre espiras.")
-        self.pitch = pitch
-        self.longitud_libre = longitud_libre
-        self.calculo_espiras_utiles(numero_espiras=numero_espiras)
-        self.set_numero_espiras(numero_espiras_utiles=self.numero_espiras_utiles,
-                                pitch=pitch,
-                                longitud_libre=longitud_libre
-                                )
-        if self.numero_espiras is None:
-            self.calculo_numero_espiras(numero_espiras_utiles=self.numero_espiras_utiles)
+        self.calculo_espiras_utiles(numero_espiras=self.numero_espiras)
         self.calcular_factor_de_wahl()
         self.calcular_constante_muelle()
         self.calcular_longitud_bloqueo()
         self.calcular_longitud_hilo()
-        self.calacula_tension_en_posicion(self.longitud_bloqueo)
+        self.calcula_carga_en_posicion(self.longitud_bloqueo)
         self.calcular_diametro_externo_en_posicion(self.longitud_bloqueo)
         properties = self.get_spring_data()
         for key, value in properties.items():
             print(f"{key}: {value}")
+        return properties
 
     def calculo_espiras_utiles(self, numero_espiras=numero_espiras):
         """Calcula el número de espiras útiles del muelle según el tipo de final"""
-        if numero_espiras is None:
-            self.numero_espiras_utiles = None
-            return self.numero_espiras_utiles
         self.numero_espiras = numero_espiras
         print(f"numero de espiras antes de calculo espiras utiles: {self.numero_espiras}")
         if self.tipo_final == 'abierto':
@@ -83,27 +105,10 @@ class MuelleCompresion(MuelleLineal):
             self.numero_espiras_utiles = self.numero_espiras - 1
         print(f"numero de espiras utiles despues de calculo espiras utiles: {self.numero_espiras_utiles}")
         return self.numero_espiras_utiles
-    
-    def calculo_numero_espiras(self, numero_espiras_utiles:float):
-        """Calcula las espiras totales a partir de las utiles"""
-        print(f"Numero espiras útiles {self.numero_espiras_utiles}")
-        if self.tipo_final == 'abierto':
-            self.numero_espiras = self.numero_espiras_utiles + 0.5
-        elif self.tipo_final == 'cerrado':
-            self.numero_espiras = self.numero_espiras_utiles + 1
-        elif self.tipo_final == 'semi-cerrado':
-            self.numero_espiras = self.numero_espiras_utiles + 0.75
-        elif self.tipo_final == 'rectificado':
-            self.numero_espiras = self.numero_espiras_utiles + 1
-
-    def calculo_pitch(self, longitud: float):
-        """Calcula el pitch del muelle"""
-        self.pitch = longitud / self.numero_espiras
-        return self.pitch
 
     def calcular_longitud_hilo(self):
         """Calcula la longitud del hilo del muelle"""
-        self.longitud_hilo = self.numero_espiras * sqrt((pi * self.diametro_medio)**2 + self.pitch**2)
+        self.longitud_hilo = self.numero_espiras * np.sqrt((pi * self.diametro_medio)**2 + self.pitch**2)
         return self.longitud_hilo
 
     def calcular_paso(self):
@@ -115,30 +120,31 @@ class MuelleCompresion(MuelleLineal):
         self.longitud_bloqueo = self.numero_espiras * self.diametero_hilo
         return self.longitud_bloqueo
 
-    def add_posicion_carga(self, longitud: float):
+    def add_posicion_carga(self, longitud):
         """Agrega una posición de carga a la tabla de posiciones"""
         try:
-            if longitud < self.longitud_bloqueo:
+            if longitud < self.longitud_bloqueo.magnitude:
                 raise ValueError("La posición no puede ser menor que la longitud de bloqueo del muelle")
             carga = self.calcula_carga_en_posicion(longitud)
-            tension = self.calacula_tension_en_posicion(longitud)
+            tension = self.calcula_tension_en_posicion()
             diametro_externo = self.calcular_diametro_externo_en_posicion(longitud)
         except ValueError as e:
             raise ValueError(f"Error al agregar posición de carga en longitud {longitud}: {e}")
         self.posiciones.add_posicion_carga(
-            posicion=longitud,
-            recorrido=self.longitud_libre - longitud,
+            posicion=self.longitud_posicion,
+            recorrido=self.longitud_libre - self.longitud_posicion,
             carga=carga,
             tension=tension,
             diametro_externo=diametro_externo,
-            diametro_interno=max(diametro_externo - 2 * self.diametero_hilo, 0)
+            diametro_interno=max(diametro_externo - 2 * self.diametero_hilo, 0 * ureg.mm)
         )
     
-    def calcular_diametro_externo_en_posicion(self, longitud:float):
+    def calcular_diametro_externo_en_posicion(self, longitud):
         """Calcula el diámetro externo del muelle"""
-        
+        self.longitud_posicion = longitud
         diametro_externo = self.diametro_medio + self.diametero_hilo + \
-                            self.diametro_medio * self.material.poisson_coef * (self.longitud_libre - longitud) / self.longitud_libre
+                           self.diametro_medio * self.material.poisson_coef * \
+                           (self.longitud_libre - self.longitud_posicion) / self.longitud_libre
         return diametro_externo
 
     def vaciar_tablas(self):
@@ -178,9 +184,15 @@ class MuelleCompresion(MuelleLineal):
         return self.posiciones.posiciones
 
     def get_forces_vs_position_graph(self, show=False):
+        def _to_mm_float(value):
+            return float(value.to('mm').magnitude) if isinstance(value, Quantity) else float(value)
+
+        def _to_n_float(value):
+            return float(value.to('N').magnitude) if isinstance(value, Quantity) else float(value)
+
         tabla_posiciones = self.posiciones.posiciones
-        posiciones = [pc.posicion for pc in tabla_posiciones]
-        cargas = [pc.carga for pc in tabla_posiciones]
+        posiciones = [_to_mm_float(pc.posicion) for pc in tabla_posiciones]
+        cargas = [_to_n_float(pc.carga) for pc in tabla_posiciones]
         plot = plt.figure()
         plt.plot(posiciones, cargas, marker='o')
         plt.title('Curva de Carga vs Posición')
@@ -201,9 +213,15 @@ class MuelleCompresion(MuelleLineal):
         return plot_data
 
     def get_forces_vs_travel_graph(self, show=False):
+        def _to_mm_float(value):
+            return float(value.to('mm').magnitude) if isinstance(value, Quantity) else float(value)
+
+        def _to_n_float(value):
+            return float(value.to('N').magnitude) if isinstance(value, Quantity) else float(value)
+
         tabla_posiciones = self.posiciones.posiciones
-        recorridos = [pc.recorrido for pc in tabla_posiciones]
-        cargas = [pc.carga for pc in tabla_posiciones]
+        recorridos = [_to_mm_float(pc.recorrido) for pc in tabla_posiciones]
+        cargas = [_to_n_float(pc.carga) for pc in tabla_posiciones]
         plot = plt.figure()
         plt.plot(recorridos, cargas, marker='o')
         plt.title('Curva de Carga vs Recorrido')
@@ -223,9 +241,12 @@ class MuelleCompresion(MuelleLineal):
         return plot_data
 
     def get_diameter_graph(self, show=False):
+        def _to_mm_float(value):
+            return float(value.to('mm').magnitude) if isinstance(value, Quantity) else float(value)
+
         tabla_posiciones = self.posiciones.posiciones
-        posiciones = [pc.posicion for pc in tabla_posiciones]
-        diametros = [pc.diametro_externo for pc in tabla_posiciones]
+        posiciones = [_to_mm_float(pc.posicion) for pc in tabla_posiciones]
+        diametros = [_to_mm_float(pc.diametro_externo) for pc in tabla_posiciones]
         plot = plt.figure()
         plt.plot(posiciones, diametros, marker='o', color='orange')
         plt.title('Diámetro Externo vs Posición')
@@ -248,12 +269,19 @@ class MuelleCompresion(MuelleLineal):
     def get_diameter_vs_position_graph(self, show=False):
         """Grafica diametro vs posicion y agrega un esquema con
         circunferencias."""
+        def _to_mm_float(value):
+            if isinstance(value, Quantity):
+                return float(value.to('mm').magnitude)
+            return float(value)
+
         tabla_posiciones = self.posiciones.posiciones
-        posiciones = [pc.posicion for pc in tabla_posiciones]
-        diametros = [pc.diametro_externo for pc in tabla_posiciones]
+        posiciones = [_to_mm_float(pc.posicion) for pc in tabla_posiciones]
+        diametros = [_to_mm_float(pc.diametro_externo) for pc in tabla_posiciones]
 
         diametro_exterior = self.diametro_medio + self.diametero_hilo
-        diametro_interior = max(self.diametro_medio - self.diametero_hilo, 0)
+        diametro_interior = max(self.diametro_medio - self.diametero_hilo, 0 * ureg.mm)
+        diametro_exterior_mm = _to_mm_float(diametro_exterior)
+        diametro_interior_mm = _to_mm_float(diametro_interior)
 
         fig, (ax1, ax2) = plt.subplots(
             1,
@@ -271,8 +299,8 @@ class MuelleCompresion(MuelleLineal):
         ax2.set_aspect('equal')
         ax2.axis('off')
 
-        radio_exterior = diametro_exterior / 2.0
-        radio_interior = diametro_interior / 2.0
+        radio_exterior = diametro_exterior_mm / 2.0
+        radio_interior = diametro_interior_mm / 2.0
         max_radio = max(radio_exterior, radio_interior, 1.0)
         padding = max_radio * 0.25
 
@@ -293,7 +321,7 @@ class MuelleCompresion(MuelleLineal):
                  lw=1)
         ax2.text(0,
                  -padding,
-                 f"Dext = {diametro_exterior:.2f} mm",
+                 f"Dext = {diametro_exterior_mm:.2f} mm",
                  ha='center',
                  va='top',
                  fontsize=8)
@@ -305,7 +333,7 @@ class MuelleCompresion(MuelleLineal):
                      lw=1)
             ax2.text(0,
                      padding,
-                     f"Dint = {diametro_interior:.2f} mm",
+                     f"Dint = {diametro_interior_mm:.2f} mm",
                      ha='center',
                      va='bottom',
                      fontsize=8)

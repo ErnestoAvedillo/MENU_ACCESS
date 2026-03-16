@@ -8,24 +8,19 @@
     <link rel="stylesheet" href="{% static 'muelles/css/estiloss.css' %}">
     <link rel="stylesheet" href="{% static 'muelles/css/calculadora-muelles.css' %}">
     <link rel="stylesheet" href="{% static 'muelles/css/muelle-extensions.css' %}">
-    <link rel="stylesheet" href="{% static 'muelles/css/form_muelles_traccion.css' %}">
+    <link rel="stylesheet" href="{% static 'muelles/css/form_muelles_torsion.css' %}">
 </head>
 <body>
     <div class="calculadora-container">
         <a href="{% url 'muelles_index' %}" class="back-button">← Volver a Muelles</a>
 
-        <h1>🌀 Calculadora Avanzada de Muelles Helicoidales de tracción</h1>
+        <h1>Calculadora Avanzada de Muelles Helicoidales de torsión</h1>
         <p>Incluye selección automática de materiales, cálculo de tolerancias, y análisis completo de propiedades mecánicas según normativas técnicas.</p>
         <form method="post">
             {% csrf_token %}
-            <div class="form-grid torsion-form-grid">
-                <div class="torsion-sidebar-left">
-                    {% include 'muelles/partials/_material_form.html' %}
-                </div>
-                {% include 'muelles/partials/_formulario_traccion.html' %}
-                <div class="torsion-sidebar-right">
-                    {% include 'muelles/partials/_extremos_traccion.html' %}
-                </div>
+            <div class="form-grid">
+                {% include 'muelles/partials/_material_form.html' %}
+                {% include 'muelles/partials/_formulario_torsion.html' %}
             </div>
         </form>
         {% include 'muelles/partials/_calculadora_results.html' %}

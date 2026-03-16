@@ -7,7 +7,7 @@ material = Material(nombre_material="SL")
 # Crear muelle con la clase correcta
 muelle = MuelleTorsion(material=material, wire_diameter=2.5)
 # Configurar propiedades del muelle (usando nombres correctos de métodos)
-muelle.calculate_spring_properties(
+muelle.configure_spring(
     diametro_medio=20.0,
     numero_espiras=10,
     pitch=5.0,
@@ -15,11 +15,18 @@ muelle.calculate_spring_properties(
     radious_leg_fija=10.0,
     radious_leg_movil=10.0
 )
-muelle.add_position(angle=40)
-muelle.add_position(angle=10)
-muelle.get_positions()
-for pos in muelle.get_positions():
-    print(f"Posición: Carga={pos.carga} N, Tensión={pos.tension:.2f} MPa")
-    print(f"Posición: Carga={pos.carga} N, Deformación={pos.deformacion:.6f} mm/mm")
-    print(f"Posición: Carga={pos.carga} N, Factor de seguridad={pos.factor_seguridad:.2f}")
+properties = muelle.get_spring_properties()
+print("Propiedades del muelle después de la configuración:")
+for key, item in properties.items():
+    print(f"El valor de {key} = {item}")
+muelle.add_position(angle_travel=10)
+muelle.add_position(angle_travel=50)
+posiciones = muelle.get_positions()
+for pos in posiciones:
+    print(f"Posición: Carga={pos.carga} N:")
+    print(f"    Tensión={pos.tension:.2f} MPa")
+    print(f"    Posición={pos.posicion * 180 / pi:.6f} degrees")
+    print(f"    Recorrido={pos.recorrido * 180 / pi:.6f} degrees")
+    print(f"    Diámetro Externo={pos.diametro_externo:.6f} mm")
+    print(f"    Diámetro Interno={pos.diametro_interno:.6f} mm")
     print("-" * 40)
