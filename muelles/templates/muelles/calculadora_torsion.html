@@ -18,9 +18,13 @@
         <p>Incluye selección automática de materiales, cálculo de tolerancias, y análisis completo de propiedades mecánicas según normativas técnicas.</p>
         <form method="post">
             {% csrf_token %}
-            <div class="form-grid">
-                {% include 'muelles/partials/_material_form.html' %}
-                {% include 'muelles/partials/_formulario_torsion.html' %}
+            <div class="form-grid torsion-form-grid">
+                <div class="torsion-sidebar-left">
+                    {% include 'muelles/partials/_material_form.html' %}
+                </div>
+                <div class="torsion-sidebar-right">
+                    {% include 'muelles/partials/_formulario_torsion.html' %}
+                </div>
             </div>
         </form>
         {% include 'muelles/partials/_calculadora_results.html' %}
@@ -29,5 +33,6 @@
 
     <!-- Scripts externos -->
     <script src="{% static 'muelles/js/calculadora-muelles.js' %}"></script>
+    <script src="{% static 'muelles/js/form_torsion.js' %}"></script>
 </body>
 </html>

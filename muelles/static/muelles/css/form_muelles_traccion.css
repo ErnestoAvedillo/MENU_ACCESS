@@ -1,36 +1,36 @@
 /* Three-column layout: left | 80% diagram | right */
-.torsion-form-grid {
+.traccion-form-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 50% minmax(0, 1fr);
     gap: 16px;
     align-items: start;
 }
 
-.torsion-sidebar-left,
-.torsion-sidebar-right {
+.traccion-sidebar-left,
+.traccion-sidebar-right {
     align-self: start;
 }
 
-.torsion-sidebar-left {
+.traccion-sidebar-left {
     grid-column: 1;
 }
 
-.torsion-sidebar-right {
+.traccion-sidebar-right {
     grid-column: 3;
 }
 
-.torsion-form-grid > .spring-form-container {
+.traccion-form-grid > .spring-form-container {
     grid-column: 2;
 }
 
 @media (max-width: 768px) {
-    .torsion-form-grid {
+    .traccion-form-grid {
         grid-template-columns: 1fr;
     }
 
-    .torsion-form-grid > .spring-form-container,
-    .torsion-sidebar-left,
-    .torsion-sidebar-right {
+    .traccion-form-grid > .spring-form-container,
+    .traccion-sidebar-left,
+    .traccion-sidebar-right {
         grid-column: 1;
     }
 }

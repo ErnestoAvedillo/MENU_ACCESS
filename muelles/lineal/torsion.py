@@ -232,7 +232,7 @@ class MuelleTorsion(WireCharacteristics):
 
     def set_diametro_medio(self, diametro_medio):
         """Establece el diámetro medio del muelle de torsión"""
-        if diametro_medio <= 0:
+        if _mag(diametro_medio) <= 0:
             raise ValueError("El diámetro medio debe ser un valor positivo")
         self.diametro_medio = diametro_medio
         self.diametro_interior = self.diametro_medio - self.diametero_hilo
@@ -476,6 +476,9 @@ class MuelleTorsion(WireCharacteristics):
     def get_spring_properties(self)-> dict:
         """Obtiene un diccionario con todas las propiedades del muelle de torsión"""
         return {
+            'material': self.material.nombre_material,
+            'modulo_young': self.material.young_modulus,
+            'diametero_hilo': self.diametero_hilo,
             'diametro_medio': self.diametro_medio,
             'diametro_interior': self.diametro_interior,
             'diametro_exterior': self.diametro_exterior,
@@ -492,6 +495,7 @@ class MuelleTorsion(WireCharacteristics):
             'radious_leg_movil': self.radious_leg_movil,
             'long_leg_movil': self.long_leg_movil,
             'indice_muelle': self.indice_muelle,
+            'factor_wahl': self.factor_wahl,
             'factor_wahl_category': self.factor_wahl_category,
             'factor_wahl_eval': self.factor_wahl_eval,
             'longitud_hilo_total': self.longitud_hilo_total,

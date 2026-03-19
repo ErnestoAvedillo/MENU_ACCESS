@@ -1,3 +1,38 @@
+.form-grid.torsion-form-grid {
+    display: flex;
+    grid-template-columns: minmax(0, 1fr) 50% minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.torsion-sidebar-left,
+.torsion-sidebar-right {
+    align-self: start;
+}
+
+.torsion-sidebar-left {
+    flex: 0 0 320px;
+}
+
+.torsion-sidebar-right {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.torsion-sidebar-right > .spring-form-container {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .form-grid.torsion-form-grid {
+        display: block;
+    }
+
+    .torsion-sidebar-left {
+        margin-bottom: 16px;
+    }
+}
+
 .diagram-wrapper {
     position: relative;
     display: block;
@@ -46,4 +81,28 @@
 
 .torsion-extra-controls {
     margin-top: 14px;
+}
+
+/* Reusable tooltip style for overlay labels and inputs */
+.form-tooltip {
+    position: fixed;
+    z-index: 9999;
+    background: #1f2937;
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateX(-50%);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease;
+}
+
+.form-tooltip.is-visible {
+    opacity: 1;
+    visibility: visible;
 }

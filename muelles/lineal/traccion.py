@@ -282,7 +282,6 @@ class MuelleTraccion(MuelleLineal):
         plot_data = base64.b64encode(buf.read()).decode()
         buf.close()
         plt.close()
-
         return plot_data
 
     def get_forces_vs_travel_graph(self):
