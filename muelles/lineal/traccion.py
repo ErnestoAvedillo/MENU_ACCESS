@@ -1,24 +1,73 @@
-from math import sqrt, pi
+from numpy import sqrt, pi
 from typing import List, Optional
 import traceback
 import io
 import base64
-
+import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib.patches import Circle
-
 from .constants import WAHL_FACTOR_CONSTANTS, TIPOS_FINAL_MUELLE_TRACCION
 from .goodman import Goodman, GoodmanData, GoodmanAnalyzer
 from ..pymodels.material import Material
-from .lineal import MuelleLineal
+from .lineal import MuelleLineal, TENSION
+from pint import Quantity
+from muelles.pymodels.units import ureg
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+matplotlib.use('Agg')
 
 
 class MuelleTraccion(MuelleLineal):
     tipo_final: str = TIPOS_FINAL_MUELLE_TRACCION[1]
-    longitud_hilo: Optional[float] = None
+    longitud_hilo: Optional[Quantity] = 0.0 * ureg.mm
     numero_espiras: Optional[float] = None
-    fuerza_inicial: Optional[float] = None
-    tension_inicial: Optional[float] = None
+    fuerza_inicial: Optional[Quantity] = 0.0 * ureg.N
+    tension_inicial: Optional[Quantity] = 0.0 * ureg.MPa
+
+    @field_validator("longitud_hilo", mode="before")
+    @classmethod
+    def validate_longitud_hilo(cls, value):
+        if isinstance(value, str):
+            try:
+                return ureg(value)
+            except Exception as e:
+                raise ValueError(f"Error al convertir longitud_hilo a Quantity: {e}")
+        elif isinstance(value, (int, float)):
+            return value * ureg.mm
+        elif isinstance(value, Quantity):
+            return value
+        else:
+            raise ValueError("longitud_hilo debe ser una cadena, un número o una Quantity")
+    
+    @field_validator("fuerza_inicial", mode="before")
+    @classmethod
+    def validate_fuerza_inicial(cls, value):
+        if isinstance(value, str):
+            try:
+                return ureg(value)
+            except Exception as e:
+                raise ValueError(f"Error al convertir fuerza_inicial a Quantity: {e}")
+        elif isinstance(value, (int, float)):
+            return value * ureg.N
+        elif isinstance(value, Quantity):
+            return value
+        else:
+            raise ValueError("fuerza_inicial debe ser una cadena, un número o una Quantity")
+    
+    @field_validator("tension_inicial", mode="before")
+    @classmethod
+    def validate_tension_inicial(cls, value):
+        if isinstance(value, str):
+            try:
+                return ureg(value)
+            except Exception as e:
+                raise ValueError(f"Error al convertir tension_inicial a Quantity: {e}")
+        elif isinstance(value, (int, float)):
+            return value * ureg.MPa
+        elif isinstance(value, Quantity):
+            return value
+        else:
+            raise ValueError("tension_inicial debe ser una cadena, un número o una Quantity")
 
     def __init__(self, material, diametro_hilo: float, **data):
         super().__init__(material, diametro_hilo, **data)
@@ -75,22 +124,22 @@ class MuelleTraccion(MuelleLineal):
             raise ValueError("El diámetro medio debe ser positivo")
         self.diametro_medio = diametro_medio
 
-    def calcular_diametro_medio(self, diametro_exterior, diametro_interior):
+    def calcular_diametro_medio(self, diametro_exterior=None, diametro_interior=None):
         """Calcula el diámetro medio del muelle"""
         none_variables = sum(1 for var in [diametro_exterior,
                                            diametro_interior] if var is not None)
         if none_variables != 1:
             self.diametro_medio = (diametro_exterior + diametro_interior) / 2
-            self.diametero_hilo = diametro_exterior - self.diametro_medio
+            self.diametro_hilo = diametro_exterior - self.diametro_medio
             return self.diametro_medio
         
-        if self.diametero_hilo <= 0 or self.diametero_hilo is None:
+        if self.diametro_hilo <= 0 or self.diametro_hilo is None:
             raise ValueError("""El diámetro del hilo debe ser un valor positivo
                              y no nulo para calcular el diámetro medio""")
         if not diametro_exterior:
-            return (diametro_interior + self.diametero_hilo)
+            return (diametro_interior + self.diametro_hilo)
         if not diametro_interior:
-            diametro_medio = diametro_exterior - self.diametero_hilo
+            diametro_medio = diametro_exterior - self.diametro_hilo
         if diametro_medio <= 0:
             raise ValueError("""El diámetro medio calculado debe ser un valor
                              positivo""")
@@ -98,7 +147,7 @@ class MuelleTraccion(MuelleLineal):
         return self.diametro_medio
 
     def calcular_indice_muelle(self):
-        self.indice_muelle = self.diametro_medio / self.diametero_hilo
+        self.indice_muelle = self.diametro_medio / self.diametro_hilo
         return self.indice_muelle
 
     def calculo_espiras_utiles(self):
@@ -156,6 +205,8 @@ class MuelleTraccion(MuelleLineal):
         return self.pitch
 
     def calcular_longitud_hilo(self):
+        print (f"Calculando longitud del hilo con diametro_medio={self.diametro_medio}, pitch={self.pitch}, numero_espiras={self.numero_espiras}")
+        print(f"Fórmula utilizada: longitud_hilo = {self.numero_espiras * sqrt((pi * self.diametro_medio) ** 2 + self.pitch**2)}")
         self.longitud_hilo = self.numero_espiras * sqrt((pi * self.diametro_medio) ** 2 + self.pitch**2)
         return self.longitud_hilo
 
@@ -177,7 +228,7 @@ class MuelleTraccion(MuelleLineal):
     def calcular_constante_muelle(self):
         try:
             self.constante_muelle = (
-                self.material.shear_modulus * self.diametero_hilo**4
+                self.material.shear_modulus * self.diametro_hilo**4
             ) / (8 * self.diametro_medio**3 * self.numero_espiras_utiles)
         except Exception as e:
             raise ValueError(f"No se puede calcular la constante del muelle: {e}")
@@ -186,49 +237,51 @@ class MuelleTraccion(MuelleLineal):
     def calcular_paso(self):
         return self.longitud_libre / self.numero_espiras
 
-    def calcula_carga_en_posicion(self, longitud: float):
-        if self.constante_muelle == 0:
-            self.calcular_constante_muelle()
+    # def calcula_carga_en_posicion(self, longitud: float):
+    #     if self.constante_muelle == 0:
+    #         self.calcular_constante_muelle()
 
-        if longitud < self.longitud_libre:
-            raise ValueError("En un muelle de tracción la longitud de cálculo no puede ser menor que la longitud libre")
+    #     if longitud < self.longitud_libre.magnitude:
+    #         raise ValueError("En un muelle de tracción la longitud de cálculo no puede ser menor que la longitud libre")
 
-        extension = longitud - self.longitud_libre
-        carga = self.tension_inicial + self.constante_muelle * extension
-        return carga
+    #     extension = longitud - self.longitud_libre
+    #     carga = self.tension_inicial + self.constante_muelle * extension
+    #     return carga
 
     def calacula_tension_en_posicion(self, longitud: float):
         try:
-            carga = self.calcula_carga_en_posicion(longitud)
-            tension = (8 * self.diametro_medio * carga) / (3.1416 * self.diametero_hilo**3) * self.factor_wahl
+            carga = self.calcula_carga_en_posicion(longitud, TENSION)
+            tension = (8 * self.diametro_medio * carga) / (3.1416 * self.diametro_hilo**3) * self.factor_wahl
             return tension
         except ValueError as e:
             raise ValueError(f"Error al calcular la tensión en posición {longitud}: {e}")
 
     def calcular_diametro_externo_en_posicion(self, longitud: float):
-        extension = longitud - self.longitud_libre
+        self.longitud_posicion = longitud
+        extension = self.longitud_posicion - self.longitud_libre
         diametro_externo = (
             self.diametro_medio
-            + self.diametero_hilo
+            + self.diametro_hilo
             - self.diametro_medio * self.material.poisson_coef * extension / self.longitud_libre
         )
         return diametro_externo
 
     def add_posicion_carga(self, longitud: float):
         try:
-            carga = self.calcula_carga_en_posicion(longitud)
-            tension = self.calacula_tension_en_posicion(longitud)
-            diametro_externo = self.calcular_diametro_externo_en_posicion(longitud)
+            self.longitud_posicion = longitud
+            carga = self.calcula_carga_en_posicion(longitud,TENSION)
+            tension = self.calacula_tension_en_posicion(self.longitud_posicion)
+            diametro_externo = self.calcular_diametro_externo_en_posicion(self.longitud_posicion)
         except ValueError as e:
             raise ValueError(f"Error al agregar posición de carga en longitud {longitud}: {e}")
 
         self.posiciones.add_posicion_carga(
-            posicion=longitud,
-            recorrido=longitud - self.longitud_libre,
+            posicion=self.longitud_posicion,
+            recorrido=self.longitud_posicion - self.longitud_libre,
             carga=carga,
             tension=tension,
             diametro_externo=diametro_externo,
-            diametro_interno=max(diametro_externo - 2 * self.diametero_hilo, 0)
+            diametro_interno=max(diametro_externo - 2 * self.diametro_hilo, 0)
         )
 
     def vaciar_tablas(self):
@@ -242,7 +295,7 @@ class MuelleTraccion(MuelleLineal):
             "elastic_limit_factor": self.material.elastic_limit_factor,
             "poisson_coef": self.material.poisson_coef,
             "RMa_file": self.material.RMa_file,
-            "diametro_hilo": self.diametero_hilo,
+            "diametro_hilo": self.diametro_hilo,
             "diametro_medio": self.diametro_medio,
             "longitud_libre": self.longitud_libre,
             "numero_espiras": self.numero_espiras,
@@ -264,44 +317,66 @@ class MuelleTraccion(MuelleLineal):
     def get_data_travels(self):
         return self.posiciones.posiciones
 
-    def get_forces_vs_position_graph(self):
+    def get_forces_vs_position_graph(self, show=False):
+        def _to_mm_float(value):
+            return float(value.to('mm').magnitude) if isinstance(value, Quantity) else float(value)
+
+        def _to_n_float(value):
+            return float(value.to('N').magnitude) if isinstance(value, Quantity) else float(value)
+
         tabla_posiciones = self.posiciones.posiciones
-        posiciones = [pc.posicion for pc in tabla_posiciones]
-        cargas = [pc.carga for pc in tabla_posiciones]
+        if not tabla_posiciones:
+            raise ValueError('No hay posiciones para graficar')
+
+        posiciones = [_to_mm_float(pc.posicion) for pc in tabla_posiciones]
+        cargas = [_to_n_float(pc.carga) for pc in tabla_posiciones]
 
         plot = plt.figure()
-        plt.plot(posiciones, cargas, marker="o")
-        plt.title("Curva de Carga vs Posición")
-        plt.xlabel("Posición (mm)")
-        plt.ylabel("Carga (N)")
+        plt.plot(posiciones, cargas, marker='o')
+        plt.title('Curva de Carga vs Posicion')
+        plt.xlabel('Posicion (mm)')
+        plt.ylabel('Carga (N)')
         plt.grid(True)
+        if show:
+            plt.show()
 
         buf = io.BytesIO()
-        plt.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
         buf.seek(0)
         plot_data = base64.b64encode(buf.read()).decode()
         buf.close()
-        plt.close()
+        plt.close(plot)
         return plot_data
 
-    def get_forces_vs_travel_graph(self):
+    def get_forces_vs_travel_graph(self, show=False):
+        def _to_mm_float(value):
+            return float(value.to('mm').magnitude) if isinstance(value, Quantity) else float(value)
+
+        def _to_n_float(value):
+            return float(value.to('N').magnitude) if isinstance(value, Quantity) else float(value)
+
         tabla_posiciones = self.posiciones.posiciones
-        recorridos = [pc.recorrido for pc in tabla_posiciones]
-        cargas = [pc.carga for pc in tabla_posiciones]
+        if not tabla_posiciones:
+            raise ValueError('No hay posiciones para graficar')
+
+        recorridos = [_to_mm_float(pc.recorrido) for pc in tabla_posiciones]
+        cargas = [_to_n_float(pc.carga) for pc in tabla_posiciones]
 
         plot = plt.figure()
-        plt.plot(recorridos, cargas, marker="o")
-        plt.title("Curva de Carga vs Recorrido")
-        plt.xlabel("Recorrido (mm)")
-        plt.ylabel("Carga (N)")
+        plt.plot(recorridos, cargas, marker='o')
+        plt.title('Curva de Carga vs Recorrido')
+        plt.xlabel('Recorrido (mm)')
+        plt.ylabel('Carga (N)')
         plt.grid(True)
+        if show:
+            plt.show()
 
         buf = io.BytesIO()
-        plt.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
         buf.seek(0)
         plot_data = base64.b64encode(buf.read()).decode()
         buf.close()
-        plt.close()
+        plt.close(plot)
 
         return plot_data
 
@@ -331,8 +406,8 @@ class MuelleTraccion(MuelleLineal):
         posiciones = [pc.posicion for pc in tabla_posiciones]
         diametros = [pc.diametro_externo for pc in tabla_posiciones]
 
-        diametro_exterior = self.diametro_medio + self.diametero_hilo
-        diametro_interior = max(self.diametro_medio - self.diametero_hilo, 0)
+        diametro_exterior = self.diametro_medio + self.diametro_hilo
+        diametro_interior = max(self.diametro_medio - self.diametro_hilo, 0)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4), gridspec_kw={"width_ratios": [2, 1]})
 
@@ -380,7 +455,7 @@ class MuelleTraccion(MuelleLineal):
 
             goodman_data = GoodmanData(
                 material=self.material,
-                diameter=self.diametero_hilo,
+                diameter=self.diametro_hilo,
                 carga="torsion",
                 cycles=int(self.numero_ciclos),
             )
@@ -414,7 +489,7 @@ class MuelleTraccion(MuelleLineal):
     def get_goodman_graph(self):
         goodman_diagram = Goodman(
             material=self.material,
-            diameter=self.diametero_hilo,
+            diameter=self.diametro_hilo,
             carga="torsion",
             numero_ciclos=self.numero_ciclos,
             shot_peening=self.shot_peening,
@@ -439,7 +514,7 @@ class MuelleTraccion(MuelleLineal):
     def plot_diagramm(self):
         goodman_diagram = Goodman(
             material=self.material,
-            diameter=self.diametero_hilo,
+            diameter=self.diametro_hilo,
             carga="torsion",
             numero_ciclos=self.numero_ciclos,
             shot_peening=self.shot_peening,
@@ -451,7 +526,7 @@ class MuelleTraccion(MuelleLineal):
     def get_goodman_analysis_summary(self):
         goodman_diagram = Goodman(
             material=self.material,
-            diameter=self.diametero_hilo,
+            diameter=self.diametro_hilo,
             carga="torsion",
             numero_ciclos=self.numero_ciclos,
             shot_peening=self.shot_peening,

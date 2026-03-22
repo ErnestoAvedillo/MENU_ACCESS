@@ -1,9 +1,9 @@
 
 TIPOS_FINAL_MUELLE_COMPRESION = {
-    1: 'abierto',
-    2: 'cerrado',
-    3: 'semi-cerrado',
-    4: 'rectificado'
+    1: 'abierto_rectificado',
+    2: 'cerrado_rectificado',
+    3: 'abierto_no_rectificado',
+    4: 'cerrado_no_rectificado',
 }
 
 TIPOS_FINAL_MUELLE_TRACCION = {
@@ -22,4 +22,7 @@ WAHL_FACTOR_CONSTANTS = {
     'green': [6,12]
 }
 
-
+TIPOS_CONFORMADO = {
+    1: 'conformado_en_frio',
+    2: 'conformado_en_caliente'
+}

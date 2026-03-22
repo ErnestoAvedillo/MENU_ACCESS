@@ -8,7 +8,8 @@ from ..pymodels.units import ureg
 from pydantic import field_validator, ConfigDict
 import numpy as np
 """Clase para el cálculo de un muelle lineal"""
-
+COMPRESSION = 1
+TENSION = -1
 
 class MuelleLineal(WireCharacteristics):
     # Campos adicionales de MuelleLineal
@@ -116,7 +117,7 @@ class MuelleLineal(WireCharacteristics):
 
         data.update({
             'material': material,
-            'diametero_hilo': diametro_hilo,
+            'diametro_hilo': diametro_hilo,
             'posiciones': PosicionesTableLineal()
         })
         super().__init__(**data)
@@ -139,21 +140,21 @@ class MuelleLineal(WireCharacteristics):
                              diametro_exterior, diametro_interior, diametro_medio""")
         if diametro_exterior is not None:
             self.diametro_exterior = diametro_exterior
-            self.diametro_medio = self.diametro_exterior - self.diametero_hilo
-            self.diametro_interior = self.diametro_exterior - 2 * self.diametero_hilo
+            self.diametro_medio = self.diametro_exterior - self.diametro_hilo
+            self.diametro_interior = self.diametro_exterior - 2 * self.diametro_hilo
         elif diametro_interior is not None:
             self.diametro_interior = diametro_interior
-            self.diametro_medio = self.diametro_interior + self.diametero_hilo
-            self.diametro_exterior = self.diametro_interior + 2 * self.diametero_hilo
+            self.diametro_medio = self.diametro_interior + self.diametro_hilo
+            self.diametro_exterior = self.diametro_interior + 2 * self.diametro_hilo
         elif diametro_medio is not None:
             self.diametro_medio = diametro_medio
-            self.diametro_exterior = self.diametro_medio + self.diametero_hilo
-            self.diametro_interior = self.diametro_medio - self.diametero_hilo
+            self.diametro_exterior = self.diametro_medio + self.diametro_hilo
+            self.diametro_interior = self.diametro_medio - self.diametro_hilo
         self.calcular_factor_de_wahl()
 
     def calcular_indice_muelle(self):
         """Calcula el índice del muelle"""
-        self.indice_muelle = self.diametro_medio / self.diametero_hilo
+        self.indice_muelle = self.diametro_medio / self.diametro_hilo
         return self.indice_muelle
     
     def set_numero_espiras_utiles(self, numero_espiras_utiles=None, pitch=None, longitud_libre=None):
@@ -200,25 +201,24 @@ class MuelleLineal(WireCharacteristics):
     def calcular_constante_muelle(self):
         """Calcula la constante del muelle (N/mm)"""
         try:
-            print(f"Calculando constante del muelle con shear_modulus: {self.material.shear_modulus}, diametero_hilo: {self.diametero_hilo}, diametro_medio: {self.diametro_medio}, numero_espiras_utiles: {self.numero_espiras_utiles}")
-            self.constante_muelle = (self.material.shear_modulus * np.power(self.diametero_hilo,4)) / (8 * np.power(self.diametro_medio,3) * self.numero_espiras_utiles)
+            self.constante_muelle = (self.material.shear_modulus * np.power(self.diametro_hilo,4)) / (8 * np.power(self.diametro_medio,3) * self.numero_espiras_utiles)
         except ValueError:
             raise ValueError("No se puede calcular la constante del muelle sin el diámetro medio")
         return self.constante_muelle
 
-    def calcula_carga_en_posicion(self, longitud:float):
+    def calcula_carga_en_posicion(self, longitud:float, spring_class=COMPRESSION):
         """Calcula la carga en una posición dada usando la constante del muelle"""
         if self.constante_muelle == 0:
             self.calcular_constante_muelle()
         self.longitud_posicion = longitud
-        self.carga_posicion = self.constante_muelle * (self.longitud_libre - self.longitud_posicion)
+        self.carga_posicion = spring_class * self.constante_muelle * (self.longitud_libre - self.longitud_posicion)
         self.calcula_tension_en_posicion()
         return self.carga_posicion
 
     def calcula_tension_en_posicion(self):
         """Calcula la tensión en el hilo del muelle en una posición prdefinida dada"""
         try:
-            tension = (8 * self.diametro_medio * self.carga_posicion) / (3.1416 * self.diametero_hilo**3) * self.factor_wahl
+            tension = (8 * self.diametro_medio * self.carga_posicion) / (3.1416 * self.diametro_hilo**3) * self.factor_wahl
             return tension
         except ValueError as e:
             raise ValueError(f"Error al calcular la tensión en posición {self.longitud_posicion}: {e}")

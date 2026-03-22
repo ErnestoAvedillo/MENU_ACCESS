@@ -84,3 +84,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Paths compartidos para datos de la app muelles
+MUELLES_MATERIAL_DIR = BASE_DIR / 'muelles' / 'material'
+MUELLES_MATERIALS_CSV = MUELLES_MATERIAL_DIR / 'materials.csv'

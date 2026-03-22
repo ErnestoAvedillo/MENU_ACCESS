@@ -20,10 +20,10 @@ def test_create_wire_characteristics()-> WireCharacteristics:
         material=Material(
         nombre_material="SL",
         ),
-        diametero_hilo=2.5
+        diametro_hilo=2.5
     )
     
-    assert wire_char.diametero_hilo == 2.5
+    assert wire_char.diametro_hilo == 2.5
     assert wire_char.material.nombre_material == "SL"
     assert wire_char.tolerancia_diametro is not None
     assert wire_char.RMa_min is not None
@@ -40,10 +40,10 @@ def test_wire_characteristics_default_values()-> WireCharacteristics:
     
     wire_char = WireCharacteristics(
         material=material,
-            diametero_hilo=1.0
+            diametro_hilo=1.0
     )
     
-    assert wire_char.diametero_hilo == 1.0
+    assert wire_char.diametro_hilo == 1.0
     assert wire_char.material.nombre_material == "SH"
     assert hasattr(wire_char, 'tolerancia_diametro')
     assert hasattr(wire_char, 'RMa_min')
@@ -55,14 +55,14 @@ if __name__ == "__main__":
     wire=test_create_wire_characteristics()
     print (f"características del material creado:")
     print (f"tipo: {wire.material.nombre_material}")
-    print (f" diámetro hilo: {wire.diametero_hilo}")
+    print (f" diámetro hilo: {wire.diametro_hilo}")
     print (f" tolerancia diámetro: {wire.tolerancia_diametro}")
     print (f" RMa_min: {wire.RMa_min}")
     print (f" RMa_max: {wire.RMa_max }")
     wire = test_wire_characteristics_default_values()
     print (f"características del material creado:")
     print (f"tipo: {wire.material.nombre_material}")
-    print (f" diámetro hilo: {wire.diametero_hilo}")
+    print (f" diámetro hilo: {wire.diametro_hilo}")
     print (f" tolerancia diámetro: {wire.tolerancia_diametro}")
     print (f" RMa_min: {wire.RMa_min}")
     print (f" RMa_max: {wire.RMa_max }")

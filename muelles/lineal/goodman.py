@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from pydantic import BaseModel, computed_field, field_validator
 from ..pymodels.wire_characteristics import WireCharacteristics
@@ -29,7 +31,7 @@ class GoodmanData(BaseModel):
     @property
     def wire_characteristics(self) -> WireCharacteristics:
         """Características del hilo calculadas automáticamente"""
-        return WireCharacteristics(material=self.material, diametero_hilo=self.diameter)
+        return WireCharacteristics(material=self.material, diametro_hilo=self.diameter)
 
 
 class GoodmanAnalyzer:
@@ -129,7 +131,6 @@ class GoodmanAnalyzer:
         # Líneas del diagrama
         goodman_x = [0, V1, self.Sse, V1, 0]
         goodman_y = [self.Ssf, self.Sse, self.Sse, Sv1, -self.Ssf]
-        print(f"Diagrama de Goodman: V1={V1:.1f} MPa, Sse={self.Sse:.1f} MPa, Ssf={self.Ssf:.1f} MPa")
 
         ax.plot(goodman_x, goodman_y, 'b-', linewidth=2, label='Envolvente de Goodman')
         ax.fill(goodman_x, goodman_y, alpha=0.3, color='lightblue', label='Región segura')

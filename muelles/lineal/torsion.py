@@ -1,7 +1,13 @@
 """Cálculo de muelles de torsión."""
 from math import pi
+import io
+import base64
 import numpy as np
 from math import sqrt, atan
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
+from matplotlib.patches import Circle
 from muelles.pymodels.material import Material
 from muelles.pymodels.wire_characteristics import WireCharacteristics
 from typing import Optional
@@ -178,7 +184,7 @@ class MuelleTorsion(WireCharacteristics):
     def __init__(self, material: Material, wire_diameter: float, **data):
         data.update({
             'material': material,
-            'diametero_hilo': wire_diameter,
+            'diametro_hilo': wire_diameter,
         })
         super().__init__(**data)
         self.numero_ciclos = 1e6  # Valor por defecto de 1 millón de ciclos
@@ -220,13 +226,13 @@ class MuelleTorsion(WireCharacteristics):
         self.calcula_constante_muelle()
         return self.get_spring_properties()
 
-    def set_material(self, material: str, diametero_hilo: float):
+    def set_material(self, material: str, diametro_hilo: float):
         """Establece el material del muelle de torsión"""
-        super().set_material(material, diametero_hilo)
+        super().set_material(material, diametro_hilo)
         if not isinstance(material, Material):
             raise ValueError("""El material debe ser una instancia de la clase
                              Material""")
-        if diametero_hilo is None:
+        if diametro_hilo is None:
             raise ValueError("""Debe proporcionar el diámetro del hilo para
                             establecer el material""")
 
@@ -235,8 +241,8 @@ class MuelleTorsion(WireCharacteristics):
         if _mag(diametro_medio) <= 0:
             raise ValueError("El diámetro medio debe ser un valor positivo")
         self.diametro_medio = diametro_medio
-        self.diametro_interior = self.diametro_medio - self.diametero_hilo
-        self.diametro_exterior = self.diametro_medio + self.diametero_hilo
+        self.diametro_interior = self.diametro_medio - self.diametro_hilo
+        self.diametro_exterior = self.diametro_medio + self.diametro_hilo
         return
 
     def set_numero_espiras(self, numero_espiras):
@@ -249,7 +255,7 @@ class MuelleTorsion(WireCharacteristics):
     def set_pitch(self, pitch):
         """Establece el pitch del muelle de torsión"""
         self.pitch = pitch
-        if self.pitch <= self.diametero_hilo:
+        if self.pitch <= self.diametro_hilo:
             raise ValueError("El pitch debe ser un valor positivo")
         return self.pitch
     
@@ -276,7 +282,7 @@ class MuelleTorsion(WireCharacteristics):
 
     def calcular_indice_muelle(self):
         """Calcula el índice del muelle de torsión"""
-        self.indice_muelle = self.diametro_medio / self.diametero_hilo
+        self.indice_muelle = self.diametro_medio / self.diametro_hilo
         return self.indice_muelle
 
     def calcular_factor_de_wahl(self):
@@ -453,8 +459,8 @@ class MuelleTorsion(WireCharacteristics):
         nuevo_angulo_tangencias = self.angulo_tangencias + self.angle_travel
         nuevo_diametro_medio = (4 * (self.longitud_hilo_cuerpo ** 2 - self.pitch ** 2) / 
                                 (2 * pi * self.numero_espiras + nuevo_angulo_tangencias) ** 2) ** 0.5
-        diametro_exterior = nuevo_diametro_medio + self.diametero_hilo
-        diametro_interior = nuevo_diametro_medio - self.diametero_hilo
+        diametro_exterior = nuevo_diametro_medio + self.diametro_hilo
+        diametro_interior = nuevo_diametro_medio - self.diametro_hilo
         if not hasattr(self, 'positions'):
             self.positions = PosicionesTableAngular()
         self.positions.add_posicion_carga(self.angle_position,
@@ -472,13 +478,150 @@ class MuelleTorsion(WireCharacteristics):
     def get_positions(self):
         """Obtiene la lista de posiciones para análisis de fatiga"""
         return self.positions.posiciones
+
+    def get_data_positions(self):
+        """Retorna la tabla de posiciones angulares para curvas por posición."""
+        return self.positions.posiciones
+
+    def get_data_travels(self):
+        """Retorna la tabla de posiciones angulares para curvas por recorrido."""
+        return self.positions.posiciones
+
+    def get_forces_vs_position_graph(self, show=False):
+        """Genera la curva de torque vs posición angular."""
+        def _to_deg_float(value):
+            return float(value.to('degree').magnitude) if isinstance(value, Quantity) else float(value)
+
+        def _to_torque_float(value):
+            return float(value.to('N*mm').magnitude) if isinstance(value, Quantity) else float(value)
+
+        tabla_posiciones = self.positions.posiciones
+        if not tabla_posiciones:
+            raise ValueError('No hay posiciones para graficar')
+
+        posiciones = [_to_deg_float(pc.posicion) for pc in tabla_posiciones]
+        torques = [_to_torque_float(pc.carga) for pc in tabla_posiciones]
+
+        plot = plt.figure()
+        plt.plot(posiciones, torques, marker='o')
+        plt.title('Curva de Torque vs Posicion Angular')
+        plt.xlabel('Posicion (grados)')
+        plt.ylabel('Torque (N*mm)')
+        plt.grid(True)
+        if show:
+            plt.show()
+
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+        buf.seek(0)
+        plot_data = base64.b64encode(buf.read()).decode()
+        buf.close()
+        plt.close(plot)
+        return plot_data
+
+    def get_forces_vs_travel_graph(self, show=False):
+        """Genera la curva de torque vs recorrido angular."""
+        def _to_deg_float(value):
+            return float(value.to('degree').magnitude) if isinstance(value, Quantity) else float(value)
+
+        def _to_torque_float(value):
+            return float(value.to('N*mm').magnitude) if isinstance(value, Quantity) else float(value)
+
+        tabla_posiciones = self.positions.posiciones
+        if not tabla_posiciones:
+            raise ValueError('No hay posiciones para graficar')
+
+        recorridos = [_to_deg_float(pc.recorrido) for pc in tabla_posiciones]
+        torques = [_to_torque_float(pc.carga) for pc in tabla_posiciones]
+
+        plot = plt.figure()
+        plt.plot(recorridos, torques, marker='o')
+        plt.title('Curva de Torque vs Recorrido Angular')
+        plt.xlabel('Recorrido (grados)')
+        plt.ylabel('Torque (N*mm)')
+        plt.grid(True)
+        if show:
+            plt.show()
+
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+        buf.seek(0)
+        plot_data = base64.b64encode(buf.read()).decode()
+        buf.close()
+        plt.close(plot)
+        return plot_data
+
+    def get_diameter_vs_position_graph(self, show=False):
+        """Grafica diametro externo vs posicion angular y seccion del muelle."""
+        def _to_deg_float(value):
+            return float(value.to('degree').magnitude) if isinstance(value, Quantity) else float(value)
+
+        def _to_mm_float(value):
+            return float(value.to('mm').magnitude) if isinstance(value, Quantity) else float(value)
+
+        tabla_posiciones = self.positions.posiciones
+        if not tabla_posiciones:
+            raise ValueError('No hay posiciones para graficar')
+
+        posiciones = [_to_deg_float(pc.posicion) for pc in tabla_posiciones]
+        diametros = [_to_mm_float(pc.diametro_externo) for pc in tabla_posiciones]
+
+        diametro_exterior = self.diametro_medio + self.diametro_hilo
+        diametro_interior = max(self.diametro_medio - self.diametro_hilo, 0 * ureg.mm)
+        diametro_exterior_mm = _to_mm_float(diametro_exterior)
+        diametro_interior_mm = _to_mm_float(diametro_interior)
+
+        fig, (ax1, ax2) = plt.subplots(
+            1,
+            2,
+            figsize=(10, 4),
+            gridspec_kw={'width_ratios': [2, 1]}
+        )
+
+        ax1.plot(posiciones, diametros, marker='o', color='orange')
+        ax1.set_title('Diametro Externo vs Posicion Angular')
+        ax1.set_xlabel('Posicion (grados)')
+        ax1.set_ylabel('Diametro Externo (mm)')
+        ax1.grid(True)
+
+        ax2.set_aspect('equal')
+        ax2.axis('off')
+
+        radio_exterior = diametro_exterior_mm / 2.0
+        radio_interior = diametro_interior_mm / 2.0
+        max_radio = max(radio_exterior, radio_interior, 1.0)
+        padding = max_radio * 0.25
+
+        ax2.add_patch(Circle((0, 0), radio_exterior, fill=False, lw=2, color='tab:green'))
+        if radio_interior > 0:
+            ax2.add_patch(Circle((0, 0), radio_interior, fill=False, lw=2, color='tab:blue'))
+
+        ax2.plot([-radio_exterior, radio_exterior], [0, 0], color='tab:green', lw=1)
+        ax2.text(0, -padding, f"Dext = {diametro_exterior_mm:.2f} mm", ha='center', va='top', fontsize=8)
+
+        if radio_interior > 0:
+            ax2.plot([0, 0], [-radio_interior, radio_interior], color='tab:blue', lw=1)
+            ax2.text(0, padding, f"Dint = {diametro_interior_mm:.2f} mm", ha='center', va='bottom', fontsize=8)
+
+        ax2.set_xlim(-max_radio - padding, max_radio + padding)
+        ax2.set_ylim(-max_radio - padding, max_radio + padding)
+        if show:
+            plt.show()
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+        buf.seek(0)
+        plot_data = base64.b64encode(buf.read()).decode()
+        buf.close()
+        plt.close(fig)
+        return plot_data
     
     def get_spring_properties(self)-> dict:
         """Obtiene un diccionario con todas las propiedades del muelle de torsión"""
         return {
             'material': self.material.nombre_material,
             'modulo_young': self.material.young_modulus,
-            'diametero_hilo': self.diametero_hilo,
+            'diametro_hilo': self.diametro_hilo,
             'diametro_medio': self.diametro_medio,
             'diametro_interior': self.diametro_interior,
             'diametro_exterior': self.diametro_exterior,

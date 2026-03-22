@@ -40,13 +40,13 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="diametero_hilo">Diámetro del hilo (mm):</label>
+                        <label for="diametro_hilo">Diámetro del hilo (mm):</label>
                         <input type="number" 
-                               name="diametero_hilo" 
-                               id="diametero_hilo" 
+                               name="diametro_hilo" 
+                               id="diametro_hilo" 
                                step="0.1" 
                                min="0.1" 
-                               value="{{ request.POST.diametero_hilo }}"
+                               value="{{ request.POST.diametro_hilo }}"
                                required>
                     </div>
                     <a href="{% url 'muelles_index' %}" class="info-link">Tipo muelle: {% firstof request.POST.tipo_muelle default_tipo %}</a>

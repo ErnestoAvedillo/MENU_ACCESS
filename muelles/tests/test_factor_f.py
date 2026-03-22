@@ -9,7 +9,7 @@ def test_factor_f():
     print("=== TEST DEL MODELO DE REGRESIÓN PARA EL FACTOR f ===")
 
     material = Material(nombre_material="DH")
-    wire_char = WireCharacteristics(material=material, diametero_hilo=1.5)
+    wire_char = WireCharacteristics(material=material, diametro_hilo=1.5)
     print(f"Material: {material.nombre_material}, RMa_min: {wire_char.RMa_min:.2f} MPa")
     
     # Cargar modelo
