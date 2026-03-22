@@ -5,9 +5,12 @@ build/
 dist/
 wheels/
 *.egg-info
-
+# Excell file for autosaving
+.~lock.*
 # Virtual environments
 .venv
 
 # vs code settings
 .vscode/
+# Old files are not needed.
+*.old

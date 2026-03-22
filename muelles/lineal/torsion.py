@@ -422,7 +422,7 @@ class MuelleTorsion(WireCharacteristics):
     def set_momento_resistente(self):
         """Calcula el momento resistente del muelle de torsión para un torque
         máximo dado"""
-        self.momento_resistente = pi * np.pow(self.diametro_medio, 4) / 64
+        self.momento_resistente = pi * np.pow(self.diametro_hilo, 4) / 64
         return self.momento_resistente
 
     def calcular_tension(self, torque):

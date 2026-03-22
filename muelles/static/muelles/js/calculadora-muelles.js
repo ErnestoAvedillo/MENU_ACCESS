@@ -3,9 +3,29 @@
  * Sistema de validación, formateo y detección automática para formularios
  * Autor: Sistema de Calculadora de Muelles
  * Fecha: 2026
+ * 
+ * DESCRIPCIÓN GENERAL:
+ * Este script proporciona un sistema completo de validación, formateo y control de campos
+ * para la calculadora de muelles helicoidales. Incluye:
+ * 
+ * 1. Detección y formateo automático de números
+ * 2. Gestión inteligente de materiales y sus propiedades
+ * 3. Control dinámico de campos según el tipo de muelle
+ * 4. Sincronización automática de cálculos de diámetros
+ * 5. Bloqueo inteligente de campos relacionados matemáticamente
+ * 6. Validación completa del formulario antes del envío
+ * 
+ * Las funciones están organizadas de lo más simple (formateo) a lo más complejo (sincronización).
  */
 
 // Detección y formateo automático para inputs numéricos
+/**
+ * Configura la detección y formateo automático de inputs numéricos.
+ * - Convierte comas por puntos como separador decimal
+ * - Valida que solo contegan números válidos
+ * - Cambia el color de borde según la validez del input
+ * - Al perder el foco, redondea a 3 decimales
+ */
 function setupFormatDetection() {
     // Detectar todos los inputs numéricos
     const numericInputs = document.querySelectorAll('input[type="number"]');
@@ -52,6 +72,12 @@ function setupFormatDetection() {
 }
 
 // Detectar formato de material y auto-completar propiedades
+/**
+ * Detecta cuando se selecciona un material y auto-completa automáticamente sus propiedades:
+ * - Llena el campo de módulo de corte si está vacío
+ * - Muestra información de propiedades mecánicas del material
+ * - Destaca visualmente el campo auto-completado
+ */
 function setupMaterialDetection() {
     const materialSelect = document.getElementById('material');
     const moduloInput = document.querySelector('input[name="modulo_corte"]');
@@ -78,6 +104,16 @@ function setupMaterialDetection() {
 }
 
 // Mostrar información del material seleccionado
+/**
+ * Muestra un panel informativo con las propiedades técnicas del material seleccionado.
+ * Incluye:
+ * - Módulo de corte (en N/mm²)
+ * - Factor límite elástico
+ * - Se oculta si el material no tiene propiedades disponibles
+ * @param {HTMLOptionElement} selectedOption - La opción seleccionada del select
+ * @param {string} shearModulus - Módulo de corte del material
+ * @param {string} elasticFactor - Factor elástico del material
+ */
 function showMaterialInfo(selectedOption, shearModulus, elasticFactor) {
     let materialInfo = document.getElementById('material-info');
     if (!materialInfo) {
@@ -108,6 +144,14 @@ function showMaterialInfo(selectedOption, shearModulus, elasticFactor) {
 }
 
 // Formatear números para mostrar
+/**
+ * Formatea números para presentación visual usando la configuración regional española.
+ * - Si es entero: muestra sin decimales (ej: 123)
+ * - Si es decimal: muestra hasta 3 decimales (ej: 123,456)
+ * - Usa separador de miles (punto) y coma como separador decimal
+ * @param {number|string} num - Número a formatear
+ * @returns {string} Número formateado para mostrar
+ */
 function formatNumber(num) {
     const number = parseFloat(num);
     if (isNaN(number)) return num;
@@ -121,6 +165,12 @@ function formatNumber(num) {
 }
 
 // Validación de formulario antes del envío
+/**
+ * Valida que todos los campos requeridos estén completos antes de enviar el formulario.
+ * - Evita el envío si hay campos vacíos
+ * - Marca visualmente los campos inválidos con color rojo
+ * - Muestra una alerta indicando que complete los campos obligatorios
+ */
 function setupFormValidation() {
     const form = document.querySelector('form');
     form.addEventListener('submit', function (e) {
@@ -146,6 +196,14 @@ function setupFormValidation() {
     });
 }
 
+/**
+ * Configura el selector de tipo de muelle (compresion/tracción).
+ * - Cambia dinámicamente los campos y etiquetas según el tipo seleccionado
+ * - Muestra/oculta campos específicos de tracción (tensión inicial)
+ * - Actualiza las etiquetas de "longitud inicial/final" según el tipo
+ * - Gestiona las opciones visuales de extremos según el tipo
+ * - Selecciona automáticamente un extremo válido por defecto
+ */
 function setupSpringTypeSelector() {
     const typeSelect = document.getElementById('tipo_muelle');
     const tensionGroup = document.getElementById('traccion_tension_group');
@@ -218,6 +276,13 @@ function setupSpringTypeSelector() {
 }
 
 // Configurar selector visual de extremos de muelle
+/**
+ * Configura un selector visual para elegir el tipo de extremos del muelle.
+ * - Permite seleccionar visualmente entre diferentes opciones de extremos
+ * - Guarda el valor seleccionado en un input oculto
+ * - Incluye animaciones visuales al seleccionar y pasar el ratón
+ * - Solo una opción puede estar seleccionada a la vez
+ */
 function setupSpringEndSelector() {
     const endOptions = document.querySelectorAll('.end-option');
     const hiddenInput = document.querySelector('input[name="tipo_final"]');
@@ -260,6 +325,12 @@ function setupSpringEndSelector() {
 }
 
 // Configurar auto-detección de propiedades del material (compatibilidad)
+/**
+ * Detecta las propiedades del material seleccionado y las muestra en pantalla.
+ * Es complementario a setupMaterialDetection() para asegurar compatibilidad.
+ * - Se activa al cambiar el material seleccionado
+ * - Muestra información técnica del material (módulo de corte, factor elástico)
+ */
 function setupMaterialPropertyDetection() {
     const materialSelect = document.getElementById('material');
     if (materialSelect) {
@@ -274,330 +345,7 @@ function setupMaterialPropertyDetection() {
     }
 }
 
-function setupGeometryFieldControlAndDiameterSync() {
-    const materialSelect = document.getElementById('material');
-    const wireDiameterInput = document.getElementById('diametro_hilo');
-    const diametroMedioInput = document.getElementById('diametro_medio');
-    const diametroExteriorInput = document.getElementById('diametro_exterior');
-    const diametroInteriorInput = document.getElementById('diametro_interior');
 
-    if (!materialSelect || !wireDiameterInput) {
-        return;
-    }
-
-    const form = materialSelect.closest('form');
-    if (!form) {
-        return;
-    }
-
-    const geometryFields = Array.from(
-        form.querySelectorAll('input[type="number"], select')
-    ).filter(field => {
-        const fieldId = field.id || '';
-        const fieldName = field.name || '';
-        if (!fieldId && !fieldName) {
-            return false;
-        }
-        if (field === materialSelect || field === wireDiameterInput) {
-            return false;
-        }
-        if (fieldId === 'numero_ciclos' || fieldId === 'shot_peening') {
-            return false;
-        }
-        if (fieldName === 'csrfmiddlewaretoken') {
-            return false;
-        }
-        return true;
-    });
-
-    let blockedNotice = null;
-    let blockedNoticeTimer = null;
-
-    function showGeometryBlockedMessage() {
-        if (!blockedNotice) {
-            blockedNotice = document.createElement('div');
-            blockedNotice.textContent = 'Geometría bloqueada: selecciona material y diámetro de hilo';
-            blockedNotice.style.cssText = [
-                'position: fixed',
-                'left: 50%',
-                'top: 50%',
-                'transform: translate(-50%, -50%)',
-                'z-index: 9999',
-                'padding: 16px 20px',
-                'border-radius: 8px',
-                'background: #1f2937',
-                'color: #fff',
-                'font-size: 14px',
-                'box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3)',
-                'opacity: 0',
-                'transition: opacity 0.2s ease'
-            ].join(';');
-            document.body.appendChild(blockedNotice);
-        }
-
-        if (blockedNoticeTimer) {
-            clearTimeout(blockedNoticeTimer);
-        }
-
-        blockedNotice.style.opacity = '1';
-        blockedNoticeTimer = setTimeout(() => {
-            blockedNotice.style.opacity = '0';
-        }, 1800);
-    }
-
-    function toNumber(value) {
-        if (value === null || value === undefined || value === '') {
-            return null;
-        }
-        const parsed = Number(String(value).replace(',', '.'));
-        return Number.isFinite(parsed) ? parsed : null;
-    }
-
-    function formatNumber(value) {
-        if (!Number.isFinite(value)) {
-            return '';
-        }
-        return value.toFixed(3).replace(/\.?0+$/, '');
-    }
-
-    function isGeometryEnabled() {
-        const hasMaterial = Boolean(materialSelect.value);
-        const wireDiameter = toNumber(wireDiameterInput.value);
-        return hasMaterial && wireDiameter !== null && wireDiameter > 0;
-    }
-
-    function updateGeometryAvailability() {
-        const enabled = isGeometryEnabled();
-        geometryFields.forEach(field => {
-            field.disabled = !enabled;
-        });
-    }
-
-    function setupBlockedGeometryHandlers() {
-        // Wrap each disabled field with visual layer that captures clicks
-        geometryFields.forEach(field => {
-            // Listener directo en pointerdown (más confiable que click para disabled)
-            field.addEventListener('pointerdown', function (event) {
-                console.log('🔒 Pointerdown en campo:', field.id, 'Disabled:', field.disabled);
-                if (field.disabled) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    console.log('✋ Mostrando mensaje de bloqueado');
-                    showGeometryBlockedMessage();
-                }
-            }, true);
-
-            // También mousedown como fallback
-            field.addEventListener('mousedown', function (event) {
-                console.log('🔒 Mousedown en campo:', field.id, 'Disabled:', field.disabled);
-                if (field.disabled) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    console.log('✋ Mostrando mensaje de bloqueado (mousedown)');
-                    showGeometryBlockedMessage();
-                }
-            }, true);
-
-            // Keydown para prevenir entrada por teclado
-            field.addEventListener('keydown', function (event) {
-                if (field.disabled) {
-                    event.preventDefault();
-                    showGeometryBlockedMessage();
-                }
-            });
-        });
-
-        // Listener global como respaldo
-        document.addEventListener('pointerdown', function (event) {
-            const target = event.target;
-            if (target.disabled && geometryFields.includes(target)) {
-                console.log('Global: Campo deshabilitado detectado');
-                event.preventDefault();
-                event.stopPropagation();
-                showGeometryBlockedMessage();
-            }
-        }, true);
-    }
-
-    let isSyncing = false;
-
-    function syncDiameterFields(changedInput) {
-        if (isSyncing) {
-            return;
-        }
-        if (!diametroMedioInput || !diametroExteriorInput || !diametroInteriorInput) {
-            return;
-        }
-
-        const wireDiameter = toNumber(wireDiameterInput.value);
-        if (wireDiameter === null || wireDiameter <= 0) {
-            return;
-        }
-
-        const medio = toNumber(diametroMedioInput.value);
-        const exterior = toNumber(diametroExteriorInput.value);
-        const interior = toNumber(diametroInteriorInput.value);
-
-        isSyncing = true;
-        try {
-            if (changedInput === diametroMedioInput && medio !== null) {
-                diametroExteriorInput.value = formatNumber(medio + wireDiameter);
-                diametroInteriorInput.value = formatNumber(medio - wireDiameter);
-            } else if (changedInput === diametroExteriorInput && exterior !== null) {
-                diametroMedioInput.value = formatNumber(exterior - wireDiameter);
-                diametroInteriorInput.value = formatNumber(exterior - 2 * wireDiameter);
-            } else if (changedInput === diametroInteriorInput && interior !== null) {
-                diametroMedioInput.value = formatNumber(interior + wireDiameter);
-                diametroExteriorInput.value = formatNumber(interior + 2 * wireDiameter);
-            }
-        } finally {
-            isSyncing = false;
-        }
-    }
-
-    materialSelect.addEventListener('change', updateGeometryAvailability);
-    wireDiameterInput.addEventListener('input', function () {
-        updateGeometryAvailability();
-        // Cuando cambia el diámetro de hilo, recalcular basándose en diámetro medio si existe
-        if (diametroMedioInput && diametroMedioInput.value) {
-            syncDiameterFields(diametroMedioInput);
-        } else if (diametroExteriorInput && diametroExteriorInput.value) {
-            syncDiameterFields(diametroExteriorInput);
-        } else if (diametroInteriorInput && diametroInteriorInput.value) {
-            syncDiameterFields(diametroInteriorInput);
-        }
-    });
-
-    if (diametroMedioInput) {
-        diametroMedioInput.addEventListener('input', function () {
-            syncDiameterFields(diametroMedioInput);
-        });
-    }
-    if (diametroExteriorInput) {
-        diametroExteriorInput.addEventListener('input', function () {
-            syncDiameterFields(diametroExteriorInput);
-        });
-    }
-    if (diametroInteriorInput) {
-        diametroInteriorInput.addEventListener('input', function () {
-            syncDiameterFields(diametroInteriorInput);
-        });
-    }
-
-    setupBlockedGeometryHandlers();
-    updateGeometryAvailability();
-}
-
-// Bloqueo inteligente de campos relacionados en muelle de compresión
-function setupCompressionSpringFieldLocking() {
-    const pitchInput = document.getElementById('pitch');
-    const numeroEspirasInput = document.getElementById('numero_espiras');
-    const longitudLibreInput = document.getElementById('longitud_libre');
-
-    // Salir si no están todos los campos (no es formulario de compresión)
-    if (!pitchInput || !numeroEspirasInput || !longitudLibreInput) {
-        return;
-    }
-
-    const fields = [
-        { input: pitchInput, name: 'pitch' },
-        { input: numeroEspirasInput, name: 'numero_espiras' },
-        { input: longitudLibreInput, name: 'longitud_libre' }
-    ];
-
-    let blockNotice = null;
-    let blockNoticeTimer = null;
-
-    function showCompressionBlockMessage() {
-        if (!blockNotice) {
-            blockNotice = document.createElement('div');
-            blockNotice.textContent = 'Campo bloqueado: relación entre pitch, espiras y longitud libre';
-            blockNotice.style.cssText = [
-                'position: fixed',
-                'left: 50%',
-                'top: 50%',
-                'transform: translate(-50%, -50%)',
-                'z-index: 9999',
-                'padding: 16px 20px',
-                'border-radius: 8px',
-                'background: #f59e0b',
-                'color: #fff',
-                'font-size: 14px',
-                'box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3)',
-                'opacity: 0',
-                'transition: opacity 0.2s ease'
-            ].join(';');
-            document.body.appendChild(blockNotice);
-        }
-
-        if (blockNoticeTimer) {
-            clearTimeout(blockNoticeTimer);
-        }
-
-        blockNotice.style.opacity = '1';
-        blockNoticeTimer = setTimeout(() => {
-            blockNotice.style.opacity = '0';
-        }, 1800);
-    }
-
-    function updateFieldLocking() {
-        // Contar campos rellenos
-        const filledCount = fields.filter(f => f.input.value && f.input.value.trim() !== '').length;
-
-        // Si hay 2 campos rellenos, bloquear el tercero
-        if (filledCount === 2) {
-            fields.forEach(field => {
-                if (!field.input.value || field.input.value.trim() === '') {
-                    field.input.disabled = true;
-                    field.input.style.opacity = '0.5';
-                    field.input.style.cursor = 'not-allowed';
-                }
-            });
-        } else {
-            // Si no hay 2 campos rellenos, desbloquear todos
-            fields.forEach(field => {
-                if (field.input.name != "longitud_inicial" && field.input.name != "longitud_final") {
-                    field.input.disabled = false;
-                    field.input.style.opacity = '1';
-                    field.input.style.cursor = 'auto';
-                };
-            });
-
-        }
-    }
-
-    // Agregar event listeners a los tres campos
-    fields.forEach(field => {
-        // field.input.addEventListener('input', updateFieldLocking);
-
-        // Prevenir entrada en campos bloqueados
-        field.input.addEventListener('pointerdown', function (event) {
-            if (field.input.disabled) {
-                event.preventDefault();
-                event.stopPropagation();
-                showCompressionBlockMessage();
-            }
-        }, true);
-
-        field.input.addEventListener('mousedown', function (event) {
-            if (field.input.disabled) {
-                event.preventDefault();
-                event.stopPropagation();
-                showCompressionBlockMessage();
-            }
-        }, true);
-
-        field.input.addEventListener('keydown', function (event) {
-            if (field.input.disabled) {
-                event.preventDefault();
-                showCompressionBlockMessage();
-            }
-        });
-    });
-
-    // Inicializar estado
-    updateFieldLocking();
-}
 
 // Inicialización del sistema cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function () {
@@ -608,7 +356,6 @@ document.addEventListener('DOMContentLoaded', function () {
     setupSpringEndSelector();
     setupMaterialPropertyDetection();
     setupGeometryFieldControlAndDiameterSync();
-    setupCompressionSpringFieldLocking();
 
     // Mostrar mensaje de carga en consola
     console.log('🔧 Sistema de detección de formato HTML activado');

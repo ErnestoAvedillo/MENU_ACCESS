@@ -15,16 +15,18 @@
                     step="any"
                     name="diametro_exterior"
                     id="diametro_exterior"
-                    value="{{ request.POST.diametro_exterior }}">
+                    value="{{ request.POST.diametro_exterior }}"
+                    required>
             <span class="label" data-tooltip="Diametro exterior (De) en mm"></span>
         </div>
 
-        <div class="input-overlay Dm-field" style="top: 40%; left: 13%;">
+        <div class="input-overlay Dm-field" style="top: 45%; left: 13%;">
             <input type="number"
                     step="any"
                     name="diametro_medio"
                     id="diametro_medio"
-                    value="{{ request.POST.diametro_medio }}">
+                    value="{{ request.POST.diametro_medio }}"
+                    required>
             <span class="label" data-tooltip="Diametro medio (Dm) en mm"></span>
         </div>
 
@@ -33,7 +35,8 @@
                     step="any"
                     name="diametro_interior"
                     id="diametro_interior"
-                    value="{{ request.POST.diametro_interior }}">
+                    value="{{ request.POST.diametro_interior }}"
+                    required>
             <span class="label" data-tooltip="Diametro interior (Di) en mm"></span>
         </div>
 
@@ -42,7 +45,8 @@
                     step="any"
                     name="longitud_sujecion"
                     id="longitud_sujecion"
-                    value="{{ request.POST.longitud_sujecion }}">
+                    value="{{ request.POST.longitud_sujecion }}"
+                    required>
             <span class="label" data-tooltip="Longitud de pata fija (Ls) en mm"></span>
         </div>
         <div class="input-overlay Ra-field" style="top: 55%; left: 20%;">
@@ -50,15 +54,17 @@
                     step="any"
                     name="Radio_sujecion"
                     id="Radio_sujecion"
-                    value="{{ request.POST.Radio_sujecion }}">
+                    value="{{ request.POST.Radio_sujecion }}"
+                    required>
             <span class="label" data-tooltip="Radio de sujeción (Ra) pata móvil en mm"></span>
         </div>
-        <div class="input-overlay A1-field" style="top: 67%; left: 33%;">
+        <div class="input-overlay A1-field" style="top: 69%; left: 33%;">
             <input type="number"
                     step="any"
                     name="angulo_inicial"
                     id="angulo_inicial"
-                    value="{{ request.POST.angulo_inicial }}">
+                    value="{{ request.POST.angulo_inicial }}"
+                    required>
             <span class="label" data-tooltip="Primera posición de carga (A1)"></span>
         </div>
         <div class="input-overlay A2-field" style="top: 65%; left: 48%;">
@@ -66,7 +72,8 @@
                     step="any"
                     name="angulo_final"
                     id="angulo_final"
-                    value="{{ request.POST.angulo_final }}">
+                    value="{{ request.POST.angulo_final }}"
+                    required>
             <span class="label" data-tooltip="Primera posición de carga (A2)"></span>
         </div>
         <div class="input-overlay angulo_libre" style="top: 75%; left: 50%;">
@@ -74,24 +81,27 @@
                     step="any"
                     name="angulo_libre"
                     id="angulo_libre"
-                    value="{{ request.POST.angulo_libre }}">
+                    value="{{ request.POST.angulo_libre }}"
+                    required>
             <span class="label" data-tooltip="Ángulo de libre (A0)"></span>
         </div>
-        <div class="input-overlay nt-field" style="top: 38%; left: 85%;">
+        <div class="input-overlay nt-field" style="top: 38%; left: 83%;">
             <input type="number"
                     step="any"
                     name="numero_espiras"
                     id="numero_espiras"
-                    value="{{ request.POST.numero_espiras }}">
+                    value="{{ request.POST.numero_espiras }}"
+                    required>
             <span class="label" data-tooltip="Número de espiras (nt)"></span>
         
         </div>
-        <div class="input-overlay pitch-field" style="top: 37%; left: 91%;">
+        <div class="input-overlay pitch-field" style="top: 37%; left: 93%;">
             <input type="number"
                     step="any"
                     name="pitch"
                     id="pitch"
-                    value="{{ request.POST.pitch }}">
+                    value="{{ request.POST.pitch }}"
+                    required>
             <span class="label" data-tooltip="Paso (pitch) en mm"></span>
         </div>
     </div>

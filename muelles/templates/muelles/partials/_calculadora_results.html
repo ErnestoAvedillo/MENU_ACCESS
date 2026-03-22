@@ -18,9 +18,9 @@
                         <h4 class="spec-title material">Material</h4>
                         <div class="spec-content">
                             <strong>Tipo:</strong> {% firstof resultado.material_nombre resultado.material 'N/D' %}<br>
-                            <strong>Modulo G:</strong> {% firstof resultado.modulo_corte resultado.shear_modulus 'N/D' %} N/mm2<br>
+                            <strong>Modulo G:</strong> {% firstof resultado.modulo_corte resultado.shear_modulus 'N/D' %} <br>
                             <strong>Modulo E:</strong> {% firstof resultado.modulo_young 'N/D' %}<br>
-                            <strong>Diametro hilo:</strong> {% firstof resultado.diametro_hilo 'N/D' %} mm <br>
+                            <strong>Diametro hilo:</strong> {% firstof resultado.diametro_hilo 'N/D' %}  <br>
                             <strong>Shot peening:</strong>
                                 <span class="result-value">
                                     {% if resultado.shot_peening %}Si{% else %}No{% endif %}
@@ -31,14 +31,14 @@
                     <div class="spec-card">
                         <h4 class="spec-title dimensions">Dimensiones</h4>
                         <div class="spec-content">
-                            <strong>Diametro medio:</strong> {% firstof resultado.diametro_medio 'N/D' %} mm<br>
-                            <strong>Diametro exterior:</strong> {% firstof resultado.diametro_exterior 'N/D' %} mm<br>
-                            <strong>Diametro interior:</strong> {% firstof resultado.diametro_interior 'N/D' %} mm<br>
+                            <strong>Diametro medio:</strong> {% firstof resultado.diametro_medio 'N/D' %} <br>
+                            <strong>Diametro exterior:</strong> {% firstof resultado.diametro_exterior 'N/D' %} <br>
+                            <strong>Diametro interior:</strong> {% firstof resultado.diametro_interior 'N/D' %} <br>
                             {% if resultado.longitud_libre %}
-                            <strong>Longitud libre:</strong> {{ resultado.longitud_libre }} mm<br>
+                            <strong>Longitud libre:</strong> {{ resultado.longitud_libre }} <br>
                             {% endif %}
                             {% if resultado.longitud_hilo %}
-                            <strong>Longitud hilo:</strong> {{ resultado.longitud_hilo }} mm<br>
+                            <strong>Longitud hilo:</strong> {{ resultado.longitud_hilo }} <br>
                             {% endif %}
                             {% if resultado.longitud_hilo_total %}
                             <strong>Longitud hilo total:</strong> {{ resultado.longitud_hilo_total }}<br>
@@ -54,12 +54,12 @@
                         <div class="spec-content">
                             <strong>Numero espiras:</strong> {% firstof resultado.numero_espiras 'N/D' %}<br>
                             <strong>Numero espiras utiles:</strong> {% firstof resultado.numero_espiras_utiles 'N/D' %}<br>
-                            <strong>Pitch:</strong> {% firstof resultado.pitch 'N/D' %} mm<br>
+                            <strong>Pitch:</strong> {% firstof resultado.pitch 'N/D' %} <br>
                             {% if resultado.ancho_muelle %}
                             <strong>Ancho muelle:</strong> {{ resultado.ancho_muelle }}<br>
                             {% endif %}
                             {% if resultado.longitud_bloqueo %}
-                            <strong>Longitud bloqueo:</strong> {{ resultado.longitud_bloqueo }} mm<br>
+                            <strong>Longitud bloqueo:</strong> {{ resultado.longitud_bloqueo }} <br>
                             {% endif %}
                             {% if resultado.angulo_libre %}
                             <strong>Angulo libre:</strong> {{ resultado.angulo_libre }}<br>
