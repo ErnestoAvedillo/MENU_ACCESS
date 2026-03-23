@@ -23,22 +23,9 @@ def calculadora_traccion(request):
             )
 
             diametro_medio = datos_entrada_muelle.get('diametro_medio')
-            diametro_exterior = datos_entrada_muelle.get('diametro_exterior')
-            diametro_interior = datos_entrada_muelle.get('diametro_interior')
-            diametros_proporcionados = [
-                d for d in [diametro_medio, diametro_exterior, diametro_interior]
-                if d is not None
-            ]
-            if len(diametros_proporcionados) != 1:
-                raise ValueError(
-                    'Debe proporcionar exactamente uno de los tres diámetros: '
-                    'exterior, interior, medio'
-                )
 
             muelle.validate_diameters(
                 diametro_medio=diametro_medio,
-                diametro_exterior=diametro_exterior,
-                diametro_interior=diametro_interior,
             )
             muelle.calculate_spring_properties(
                 numero_espiras=datos_entrada_muelle['numero_espiras'],
